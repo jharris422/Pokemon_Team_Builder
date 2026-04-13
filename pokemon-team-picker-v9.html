@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Team Picker</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap');
+:root{--bg:#080b12;--surface:#0f1420;--card:#141926;--border:#1e2535;--accent:#c8ff00;--accent2:#00d4ff;--red:#ff4060;--purple:#a78bfa;--text:#e8eaf0;--dim:#5a6080;--dim2:#8a90a8}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;max-width:480px;margin:0 auto;padding-bottom:60px}
+.header{padding:20px 20px 0}
+.header-label{font-family:'Bebas Neue',sans-serif;font-size:.7rem;letter-spacing:4px;color:var(--dim);margin-bottom:2px}
+.header-title{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:2px;line-height:1}
+.header-title span{color:var(--accent)}
+.nav-tabs{display:flex;padding:16px 20px 0;border-bottom:1px solid var(--border);margin-bottom:0}
+.nav-tab{flex:1;padding:10px 4px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:.8rem;letter-spacing:2px;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.page{display:none;padding:16px 20px}
+.page.visible{display:block}
+.sec-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:3px;color:var(--dim2);margin-bottom:12px}
+.sec-title span{color:var(--accent)}
+
+/* TEAM CARDS */
+.team-card{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:border-color .2s;margin-bottom:8px}
+.team-card:active{opacity:.8}
+.team-card.active-team{border-color:var(--accent2)}
+.tc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.tc-name{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px}
+.tc-name.empty-name{color:var(--dim)}
+.tc-mons{display:flex;flex-wrap:wrap;gap:4px}
+.mon-chip{font-size:.65rem;font-weight:600;padding:2px 7px;border-radius:4px;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);color:var(--accent2)}
+.mon-chip.empty{background:var(--surface);border-color:var(--border);color:var(--dim)}
+.icon-btn{background:none;border:none;color:var(--dim);font-size:.9rem;cursor:pointer;padding:4px 6px}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:20px;max-height:88vh;display:flex;flex-direction:column}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:3px;color:var(--dim2);margin-bottom:12px}
+.modal-title span{color:var(--accent)}
+.modal-scroll{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}
+
+/* INPUTS */
+.inp{background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:1rem;width:100%;outline:none;margin-bottom:10px}
+.inp:focus{border-color:var(--accent)}
+.inp::placeholder{color:var(--dim)}
+.inp-label{font-family:'Bebas Neue',sans-serif;font-size:.7rem;letter-spacing:2px;color:var(--dim);margin-bottom:4px}
+
+/* BUTTONS */
+.btn{width:100%;padding:13px;border-radius:12px;border:none;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:3px;cursor:pointer;margin-top:6px;display:block}
+.btn:active{opacity:.8}
+.btn:disabled{opacity:.3;cursor:not-allowed}
+.btn-primary{background:var(--accent);color:#080b12}
+.btn-secondary{background:var(--card);color:var(--text);border:1.5px solid var(--border)}
+.btn-sm{padding:7px 12px;font-size:.72rem;width:auto;border-radius:8px;margin-top:0;display:inline-block}
+
+/* MON EDITOR */
+.mon-editor{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px}
+.me-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.me-name{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px}
+.mon-types{display:flex;gap:4px;flex-wrap:wrap}
+.moves-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.move-slot{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;cursor:pointer;min-height:52px}
+.move-slot:active{opacity:.8}
+.move-slot.filled{border-color:rgba(200,255,0,.3);background:rgba(200,255,0,.04)}
+.ms-label{font-size:.6rem;letter-spacing:1.5px;color:var(--dim);font-family:'Bebas Neue',sans-serif}
+.ms-name{font-size:.78rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ms-type{font-size:.6rem;font-weight:700;letter-spacing:.5px;padding:1px 5px;border-radius:3px;margin-top:2px;display:inline-block}
+.ms-cat{font-size:.58rem;color:var(--dim);margin-left:4px}
+
+/* SEARCH */
+.s-result{padding:10px 12px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:10px}
+.s-result:active{background:var(--card)}
+.s-rname{font-weight:600;font-size:.9rem;flex:1}
+.s-rmeta{font-size:.72rem;color:var(--dim2);text-align:right}
+.no-results{text-align:center;color:var(--dim);padding:20px;font-size:.85rem}
+
+/* SLOTS */
+.slot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.slot{background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center;cursor:pointer;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+.slot:active{opacity:.8}
+.slot.filled{border-color:rgba(255,64,96,.4);background:rgba(255,64,96,.04)}
+.slot-num{font-family:'Bebas Neue',sans-serif;font-size:.6rem;letter-spacing:2px;color:var(--dim)}
+.slot-name{font-size:.72rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%}
+.slot-plus{font-size:1.4rem;color:var(--dim);line-height:1}
+.slot-x{font-size:.6rem;color:var(--dim);align-self:flex-end}
+.type-pip{font-size:.55rem;font-weight:700;letter-spacing:.5px;padding:1px 5px;border-radius:3px;text-transform:uppercase}
+
+/* RESULTS */
+.result-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px;position:relative;overflow:hidden}
+.result-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.r1::before{background:var(--accent)}.r2::before{background:var(--accent2)}.r3::before{background:var(--purple)}
+.r-rank{font-family:'Bebas Neue',sans-serif;font-size:.7rem;letter-spacing:3px;margin-bottom:3px}
+.r1 .r-rank{color:var(--accent)}.r2 .r-rank{color:var(--accent2)}.r3 .r-rank{color:var(--purple)}
+.r-name{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;letter-spacing:1px;line-height:1;margin-bottom:8px}
+.score-bar{height:4px;background:var(--border);border-radius:2px;margin-bottom:10px;overflow:hidden}
+.score-fill{height:100%;border-radius:2px}
+.r1 .score-fill{background:var(--accent)}.r2 .score-fill{background:var(--accent2)}.r3 .score-fill{background:var(--purple)}
+.cov-row{margin-bottom:6px;font-size:.78rem;color:var(--dim2);line-height:1.8}
+.tag-g{display:inline-flex;align-items:center;gap:3px;background:rgba(200,255,0,.08);border:1px solid rgba(200,255,0,.25);border-radius:5px;padding:1px 7px;margin:1px;font-size:.7rem;color:var(--accent);font-weight:600}
+.tag-w{display:inline-flex;align-items:center;gap:3px;background:rgba(255,64,96,.08);border:1px solid rgba(255,64,96,.25);border-radius:5px;padding:1px 7px;margin:1px;font-size:.7rem;color:var(--red);font-weight:600}
+.tag-i{display:inline-flex;align-items:center;gap:3px;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.25);border-radius:5px;padding:1px 7px;margin:1px;font-size:.7rem;color:var(--accent2);font-weight:600}
+.threat-box{background:var(--surface);border:1.5px solid rgba(255,64,96,.25);border-radius:10px;padding:12px;margin-bottom:8px}
+.threat-title{font-family:'Bebas Neue',sans-serif;font-size:.8rem;letter-spacing:2px;color:var(--red);margin-bottom:6px}
+.divider{height:1px;background:var(--border);margin:14px 0}
+.empty-state{text-align:center;color:var(--dim);padding:30px 20px;font-size:.85rem;line-height:1.6}
+.sel-badge{color:var(--accent);font-family:'Bebas Neue',sans-serif;font-size:.75rem;letter-spacing:2px}
+
+/* TYPE COLORS */
+.t-Normal{background:#9099a1;color:#fff}.t-Fire{background:#ff9d55;color:#fff}.t-Water{background:#4d90d5;color:#fff}
+.t-Electric{background:#f3d23b;color:#333}.t-Grass{background:#63bb5b;color:#fff}.t-Ice{background:#74cec0;color:#fff}
+.t-Fighting{background:#ce406a;color:#fff}.t-Poison{background:#ab6ac8;color:#fff}.t-Ground{background:#d97746;color:#fff}
+.t-Flying{background:#8fa8dd;color:#fff}.t-Psychic{background:#f97176;color:#fff}.t-Bug{background:#90c12c;color:#fff}
+.t-Rock{background:#c9bb8a;color:#333}.t-Ghost{background:#5269ac;color:#fff}.t-Dragon{background:#0a6dc4;color:#fff}
+.t-Dark{background:#5a5366;color:#fff}.t-Steel{background:#5a8ea2;color:#fff}.t-Fairy{background:#ec8fe6;color:#fff}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-label">POKEMON CHAMPIONS</div>
+  <div class="header-title">TEAM <span>PICKER</span></div>
+</div>
+<div class="nav-tabs">
+  <div class="nav-tab active" id="tab-teams" onclick="showPage('teams')">MY TEAMS</div>
+  <div class="nav-tab" id="tab-battle" onclick="showPage('battle')">BATTLE</div>
+</div>
+
+<!-- PAGE: MY TEAMS -->
+<div class="page visible" id="page-teams">
+  <div class="sec-title" style="margin-top:4px">SAVED <span>ROSTERS</span></div>
+  <div id="team-list">
+    <!-- Static slots - JS will populate names/mons but slots always exist -->
+    <div class="team-card" id="tc-0" onclick="openTeamEditor(0)"><div class="tc-header"><div class="tc-name empty-name" id="tcn-0">TEAM 1</div><button class="icon-btn" id="tc-clr-0" style="display:none" onclick="clearTeam(event,0)">✕</button></div><div class="tc-mons" id="tcm-0"><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span></div></div>
+    <div class="team-card" id="tc-1" onclick="openTeamEditor(1)"><div class="tc-header"><div class="tc-name empty-name" id="tcn-1">TEAM 2</div><button class="icon-btn" id="tc-clr-1" style="display:none" onclick="clearTeam(event,1)">✕</button></div><div class="tc-mons" id="tcm-1"><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span></div></div>
+    <div class="team-card" id="tc-2" onclick="openTeamEditor(2)"><div class="tc-header"><div class="tc-name empty-name" id="tcn-2">TEAM 3</div><button class="icon-btn" id="tc-clr-2" style="display:none" onclick="clearTeam(event,2)">✕</button></div><div class="tc-mons" id="tcm-2"><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span></div></div>
+    <div class="team-card" id="tc-3" onclick="openTeamEditor(3)"><div class="tc-header"><div class="tc-name empty-name" id="tcn-3">TEAM 4</div><button class="icon-btn" id="tc-clr-3" style="display:none" onclick="clearTeam(event,3)">✕</button></div><div class="tc-mons" id="tcm-3"><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span></div></div>
+    <div class="team-card" id="tc-4" onclick="openTeamEditor(4)"><div class="tc-header"><div class="tc-name empty-name" id="tcn-4">TEAM 5</div><button class="icon-btn" id="tc-clr-4" style="display:none" onclick="clearTeam(event,4)">✕</button></div><div class="tc-mons" id="tcm-4"><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span></div></div>
+    <div class="team-card" id="tc-5" onclick="openTeamEditor(5)"><div class="tc-header"><div class="tc-name empty-name" id="tcn-5">TEAM 6</div><button class="icon-btn" id="tc-clr-5" style="display:none" onclick="clearTeam(event,5)">✕</button></div><div class="tc-mons" id="tcm-5"><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span></div></div>
+    <div class="team-card" id="tc-6" onclick="openTeamEditor(6)"><div class="tc-header"><div class="tc-name empty-name" id="tcn-6">TEAM 7</div><button class="icon-btn" id="tc-clr-6" style="display:none" onclick="clearTeam(event,6)">✕</button></div><div class="tc-mons" id="tcm-6"><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span></div></div>
+    <div class="team-card" id="tc-7" onclick="openTeamEditor(7)"><div class="tc-header"><div class="tc-name empty-name" id="tcn-7">TEAM 8</div><button class="icon-btn" id="tc-clr-7" style="display:none" onclick="clearTeam(event,7)">✕</button></div><div class="tc-mons" id="tcm-7"><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span></div></div>
+    <div class="team-card" id="tc-8" onclick="openTeamEditor(8)"><div class="tc-header"><div class="tc-name empty-name" id="tcn-8">TEAM 9</div><button class="icon-btn" id="tc-clr-8" style="display:none" onclick="clearTeam(event,8)">✕</button></div><div class="tc-mons" id="tcm-8"><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span></div></div>
+    <div class="team-card" id="tc-9" onclick="openTeamEditor(9)"><div class="tc-header"><div class="tc-name empty-name" id="tcn-9">TEAM 10</div><button class="icon-btn" id="tc-clr-9" style="display:none" onclick="clearTeam(event,9)">✕</button></div><div class="tc-mons" id="tcm-9"><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span><span class="mon-chip empty">—</span></div></div>
+  </div>
+</div>
+
+<!-- PAGE: BATTLE -->
+<div class="page" id="page-battle">
+  <div class="sec-title">SELECT <span>YOUR TEAM</span></div>
+  <div id="my-team-select" style="margin-bottom:16px">
+    <div class="empty-state">No saved teams yet. Go to MY TEAMS to build your roster first.</div>
+  </div>
+  <div class="sec-title">OPPONENT'S <span>TEAM</span></div>
+  <div class="slot-grid">
+    <div class="slot" id="eslot-0" onclick="openEnemySlot(0)"><div class="slot-num">SLOT 1</div><div class="slot-plus">+</div></div>
+    <div class="slot" id="eslot-1" onclick="openEnemySlot(1)"><div class="slot-num">SLOT 2</div><div class="slot-plus">+</div></div>
+    <div class="slot" id="eslot-2" onclick="openEnemySlot(2)"><div class="slot-num">SLOT 3</div><div class="slot-plus">+</div></div>
+    <div class="slot" id="eslot-3" onclick="openEnemySlot(3)"><div class="slot-num">SLOT 4</div><div class="slot-plus">+</div></div>
+    <div class="slot" id="eslot-4" onclick="openEnemySlot(4)"><div class="slot-num">SLOT 5</div><div class="slot-plus">+</div></div>
+    <div class="slot" id="eslot-5" onclick="openEnemySlot(5)"><div class="slot-num">SLOT 6</div><div class="slot-plus">+</div></div>
+  </div>
+  <button class="btn btn-primary" id="btn-analyze" onclick="analyze()" disabled>ANALYZE MATCHUP</button>
+  <button class="btn btn-secondary" onclick="clearBattle()">CLEAR OPPONENT</button>
+  <div id="results-area" style="margin-top:20px"></div>
+</div>
+
+<!-- MODAL: TEAM EDITOR -->
+<div class="modal-overlay" id="modal-editor">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">EDIT — <span id="ed-title">TEAM</span></div>
+    <div class="inp-label">TEAM NAME</div>
+    <input class="inp" id="ed-name" placeholder="e.g. Poison Team" maxlength="20">
+    <div class="modal-scroll" id="ed-content"></div>
+    <button class="btn btn-primary" onclick="saveTeam()">SAVE TEAM</button>
+    <button class="btn btn-secondary" onclick="closeModal('modal-editor')">CANCEL</button>
+  </div>
+</div>
+
+<!-- MODAL: POKEMON SEARCH -->
+<div class="modal-overlay" id="modal-poke">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="poke-title">SELECT POKEMON</div>
+    <input class="inp" id="poke-input" placeholder="Search Pokemon..." oninput="filterPoke()" autocomplete="off" autocorrect="off" spellcheck="false">
+    <div class="modal-scroll" id="poke-results"></div>
+    <button class="btn btn-secondary" onclick="closeModal('modal-poke')">CANCEL</button>
+  </div>
+</div>
+
+<!-- MODAL: ITEM SEARCH -->
+<div class="modal-overlay" id="modal-item">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="item-title">SELECT MEGA STONE</div>
+    <div class="modal-scroll" id="item-results"></div>
+    <button class="btn btn-secondary" onclick="closeModal('modal-item')">CANCEL</button>
+  </div>
+</div>
+
+<!-- MODAL: ABILITY SEARCH -->
+<div class="modal-overlay" id="modal-ability">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="ability-title">SELECT ABILITY</div>
+    <input class="inp" id="ability-input" placeholder="Search abilities..." oninput="filterAbility()" autocomplete="off" autocorrect="off" spellcheck="false">
+    <div class="modal-scroll" id="ability-results"></div>
+    <button class="btn btn-secondary" onclick="closeModal('modal-ability')">CANCEL</button>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-move">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="move-title">SELECT MOVE</div>
+    <input class="inp" id="move-input" placeholder="Search moves..." oninput="filterMove()" autocomplete="off" autocorrect="off" spellcheck="false">
+    <div class="modal-scroll" id="move-results"></div>
+    <button class="btn btn-secondary" onclick="closeModal('modal-move')">CANCEL</button>
+  </div>
+</div>
+
+<script>
+// TYPE CHART
+const TC={Normal:{w:["Fighting"],r:[],i:["Ghost"]},Fire:{w:["Water","Ground","Rock"],r:["Fire","Grass","Ice","Bug","Steel","Fairy"],i:[]},Water:{w:["Electric","Grass"],r:["Fire","Water","Ice","Steel"],i:[]},Electric:{w:["Ground"],r:["Electric","Flying","Steel"],i:[]},Grass:{w:["Fire","Ice","Poison","Flying","Bug"],r:["Water","Electric","Grass","Ground"],i:[]},Ice:{w:["Fire","Fighting","Rock","Steel"],r:["Ice"],i:[]},Fighting:{w:["Flying","Psychic","Fairy"],r:["Bug","Rock","Dark"],i:[]},Poison:{w:["Ground","Psychic"],r:["Grass","Fighting","Poison","Bug","Fairy"],i:[]},Ground:{w:["Water","Grass","Ice"],r:["Poison","Rock"],i:["Electric"]},Flying:{w:["Electric","Ice","Rock"],r:["Grass","Fighting","Bug"],i:["Ground"]},Psychic:{w:["Bug","Ghost","Dark"],r:["Fighting","Psychic"],i:[]},Bug:{w:["Fire","Flying","Rock"],r:["Grass","Fighting","Ground"],i:[]},Rock:{w:["Water","Grass","Fighting","Ground","Steel"],r:["Normal","Fire","Poison","Flying"],i:[]},Ghost:{w:["Ghost","Dark"],r:["Poison","Bug"],i:["Normal","Fighting"]},Dragon:{w:["Ice","Dragon","Fairy"],r:["Fire","Water","Electric","Grass"],i:[]},Dark:{w:["Fighting","Bug","Fairy"],r:["Ghost","Dark"],i:["Psychic"]},Steel:{w:["Fire","Fighting","Ground"],r:["Normal","Grass","Ice","Flying","Psychic","Bug","Rock","Dragon","Steel","Fairy"],i:["Poison"]},Fairy:{w:["Poison","Steel"],r:["Fighting","Bug","Dark"],i:["Dragon"]}};
+
+function eff(atk,defTypes){let m=1;for(const d of defTypes){const e=TC[d];if(!e)continue;if(e.i.includes(atk)){m=0;break}else if(e.w.includes(atk))m*=2;else if(e.r.includes(atk))m*=0.5}return m}
+
+// POKEMON DB
+const PKM=[{n:"Alakazam",t:["Psychic"]},{n:"Arcanine",t:["Fire"]},{n:"Beedrill",t:["Bug","Poison"]},{n:"Blastoise",t:["Water"]},{n:"Blissey",t:["Normal"]},{n:"Breloom",t:["Grass","Fighting"]},{n:"Bronzong",t:["Steel","Psychic"]},{n:"Charizard",t:["Fire","Flying"]},{n:"Clefable",t:["Fairy"]},{n:"Corviknight",t:["Flying","Steel"]},{n:"Decidueye",t:["Grass","Ghost"]},{n:"Delphox",t:["Fire","Psychic"]},{n:"Dragapult",t:["Dragon","Ghost"]},{n:"Dragonite",t:["Dragon","Flying"]},{n:"Espeon",t:["Psychic"]},{n:"Excadrill",t:["Ground","Steel"]},{n:"Farigiraf",t:["Normal","Psychic"]},{n:"Ferrothorn",t:["Grass","Steel"]},{n:"Flygon",t:["Ground","Dragon"]},{n:"Gallade",t:["Psychic","Fighting"]},{n:"Galarian Slowbro",t:["Poison","Psychic"]},{n:"Garchomp",t:["Dragon","Ground"]},{n:"Gardevoir",t:["Psychic","Fairy"]},{n:"Gastrodon",t:["Water","Ground"]},{n:"Gengar",t:["Ghost","Poison"]},{n:"Glimmora",t:["Rock","Poison"]},{n:"Golurk",t:["Ground","Ghost"]},{n:"Goodra",t:["Dragon"]},{n:"Grimmsnarl",t:["Dark","Fairy"]},{n:"Hatterene",t:["Psychic","Fairy"]},{n:"Hawlucha",t:["Fighting","Flying"]},{n:"Hippowdon",t:["Ground"]},{n:"Hydreigon",t:["Dark","Dragon"]},{n:"Incineroar",t:["Fire","Dark"]},{n:"Indeedee",t:["Psychic","Normal"]},{n:"Iron Bundle",t:["Ice","Water"]},{n:"Jolteon",t:["Electric"]},{n:"Kingambit",t:["Dark","Steel"]},{n:"Kingdra",t:["Water","Dragon"]},{n:"Landorus",t:["Ground","Flying"]},{n:"Latias",t:["Dragon","Psychic"]},{n:"Lucario",t:["Fighting","Steel"]},{n:"Ludicolo",t:["Water","Grass"]},{n:"Mamoswine",t:["Ice","Ground"]},{n:"Maushold",t:["Normal"]},{n:"Medicham",t:["Fighting","Psychic"]},{n:"Meowstic",t:["Psychic"]},{n:"Metagross",t:["Steel","Psychic"]},{n:"Mimikyu",t:["Ghost","Fairy"]},{n:"Mismagius",t:["Ghost"]},{n:"Ninetales",t:["Fire"]},{n:"Ninetales-A",t:["Ice","Fairy"]},{n:"Oranguru",t:["Normal","Psychic"]},{n:"Pelipper",t:["Water","Flying"]},{n:"Porygon-Z",t:["Normal"]},{n:"Raichu",t:["Electric"]},{n:"Raichu-A",t:["Electric","Psychic"]},{n:"Regieleki",t:["Electric"]},{n:"Reuniclus",t:["Psychic"]},{n:"Rhyperior",t:["Ground","Rock"]},{n:"Rotom-H",t:["Electric","Fire"]},{n:"Rotom-W",t:["Electric","Water"]},{n:"Salamence",t:["Dragon","Flying"]},{n:"Salazzle",t:["Poison","Fire"]},{n:"Scizor",t:["Bug","Steel"]},{n:"Skarmory",t:["Steel","Flying"]},{n:"Slowbro",t:["Water","Psychic"]},{n:"Slowking",t:["Water","Psychic"]},{n:"Sneasler",t:["Poison","Fighting"]},{n:"Snorlax",t:["Normal"]},{n:"Starmie",t:["Water","Psychic"]},{n:"Sylveon",t:["Fairy"]},{n:"Talonflame",t:["Fire","Flying"]},{n:"Tapu Koko",t:["Electric","Fairy"]},{n:"Tapu Lele",t:["Psychic","Fairy"]},{n:"Togekiss",t:["Fairy","Flying"]},{n:"Torkoal",t:["Fire"]},{n:"Toxapex",t:["Poison","Water"]},{n:"Toxicroak",t:["Poison","Fighting"]},{n:"Tsareena",t:["Grass"]},{n:"Tyranitar",t:["Rock","Dark"]},{n:"Umbreon",t:["Dark"]},{n:"Urshifu",t:["Fighting","Dark"]},{n:"Venusaur",t:["Grass","Poison"]},{n:"Volcarona",t:["Bug","Fire"]},{n:"Whimsicott",t:["Grass","Fairy"]},{n:"Weavile",t:["Dark","Ice"]},{n:"Zapdos",t:["Electric","Flying"]},{n:"Zeraora",t:["Electric"]}];
+
+// MOVE DB — comprehensive competitive meta coverage
+const MV={
+// NORMAL
+"Body Slam":{t:"Normal",c:"P"},"Boomburst":{t:"Normal",c:"S"},"Double-Edge":{t:"Normal",c:"P"},
+"Extreme Speed":{t:"Normal",c:"P"},"Facade":{t:"Normal",c:"P"},"Fake Out":{t:"Normal",c:"P"},
+"Flail":{t:"Normal",c:"P"},"Giga Impact":{t:"Normal",c:"P"},"Hyper Voice":{t:"Normal",c:"S"},
+"Last Resort":{t:"Normal",c:"P"},"Population Bomb":{t:"Normal",c:"P"},"Quick Attack":{t:"Normal",c:"P"},
+"Rapid Spin":{t:"Normal",c:"P"},"Return":{t:"Normal",c:"P"},"Reversal":{t:"Normal",c:"P"},
+"Scratch":{t:"Normal",c:"P"},"Slash":{t:"Normal",c:"P"},"Strength":{t:"Normal",c:"P"},
+"Tackle":{t:"Normal",c:"P"},"Tri Attack":{t:"Normal",c:"S"},"Tidy Up":{t:"Normal",c:"O"},
+"Fake Out":{t:"Normal",c:"P"},"Slack Off":{t:"Normal",c:"O"},"Recover":{t:"Normal",c:"O"},
+"Swords Dance":{t:"Normal",c:"O"},"Protect":{t:"Normal",c:"O"},"Substitute":{t:"Normal",c:"O"},
+"Encore":{t:"Normal",c:"O"},"Yawn":{t:"Normal",c:"O"},"Belly Drum":{t:"Normal",c:"O"},
+"Amnesia":{t:"Normal",c:"O"},"Defense Curl":{t:"Normal",c:"O"},"Minimize":{t:"Normal",c:"O"},
+"Agility":{t:"Normal",c:"O"},"Sharpen":{t:"Normal",c:"O"},
+// FIRE
+"Fire Blast":{t:"Fire",c:"S"},"Fire Punch":{t:"Fire",c:"P"},"Fire Spin":{t:"Fire",c:"S"},
+"Flame Charge":{t:"Fire",c:"P"},"Flame Wheel":{t:"Fire",c:"P"},"Flamethrower":{t:"Fire",c:"S"},
+"Flare Blitz":{t:"Fire",c:"P"},"Heat Wave":{t:"Fire",c:"S"},"Lava Plume":{t:"Fire",c:"S"},
+"Mystical Fire":{t:"Fire",c:"S"},"Overheat":{t:"Fire",c:"S"},"Pyro Ball":{t:"Fire",c:"P"},
+"Sacred Fire":{t:"Fire",c:"P"},"Will-O-Wisp":{t:"Fire",c:"O"},"Sunny Day":{t:"Fire",c:"O"},
+"Ember":{t:"Fire",c:"S"},"Inferno":{t:"Fire",c:"S"},"Burning Jealousy":{t:"Fire",c:"S"},
+"Bitter Blade":{t:"Fire",c:"P"},"Torch Song":{t:"Fire",c:"S"},"Temper Flare":{t:"Fire",c:"P"},
+// WATER
+"Aqua Jet":{t:"Water",c:"P"},"Aqua Tail":{t:"Water",c:"P"},"Brine":{t:"Water",c:"S"},
+"Bubble Beam":{t:"Water",c:"S"},"Clamp":{t:"Water",c:"P"},"Crabhammer":{t:"Water",c:"P"},
+"Dive":{t:"Water",c:"P"},"Flip Turn":{t:"Water",c:"P"},"Hydro Cannon":{t:"Water",c:"S"},
+"Hydro Pump":{t:"Water",c:"S"},"Hydro Steam":{t:"Water",c:"S"},"Liquidation":{t:"Water",c:"P"},
+"Muddy Water":{t:"Water",c:"S"},"Octazooka":{t:"Water",c:"S"},"Origin Pulse":{t:"Water",c:"S"},
+"Rain Dance":{t:"Water",c:"O"},"Scald":{t:"Water",c:"S"},"Surf":{t:"Water",c:"S"},
+"Water Gun":{t:"Water",c:"S"},"Water Pledge":{t:"Water",c:"S"},"Water Pulse":{t:"Water",c:"S"},
+"Water Shuriken":{t:"Water",c:"P"},"Water Spout":{t:"Water",c:"S"},"Waterfall":{t:"Water",c:"P"},
+"Wave Crash":{t:"Water",c:"P"},"Whirlpool":{t:"Water",c:"S"},"Chilling Water":{t:"Water",c:"S"},
+"Matcha Gotcha":{t:"Water",c:"S"},"Aqua Step":{t:"Water",c:"P"},
+// ELECTRIC
+"Bolt Strike":{t:"Electric",c:"P"},"Charge Beam":{t:"Electric",c:"S"},"Discharge":{t:"Electric",c:"S"},
+"Electro Ball":{t:"Electric",c:"S"},"Electro Drift":{t:"Electric",c:"S"},"Electroweb":{t:"Electric",c:"S"},
+"Nuzzle":{t:"Electric",c:"P"},"Plasma Fists":{t:"Electric",c:"P"},"Spark":{t:"Electric",c:"P"},
+"Thunder":{t:"Electric",c:"S"},"Thunder Fang":{t:"Electric",c:"P"},"Thunder Punch":{t:"Electric",c:"P"},
+"Thunder Wave":{t:"Electric",c:"O"},"Thunderbolt":{t:"Electric",c:"S"},"Thunderclap":{t:"Electric",c:"S"},
+"Thundershock":{t:"Electric",c:"S"},"Volt Switch":{t:"Electric",c:"S"},"Volt Tackle":{t:"Electric",c:"P"},
+"Wild Charge":{t:"Electric",c:"P"},"Zap Cannon":{t:"Electric",c:"S"},"Zing Zap":{t:"Electric",c:"P"},
+// GRASS
+"Bullet Seed":{t:"Grass",c:"P"},"Energy Ball":{t:"Grass",c:"S"},"Frenzy Plant":{t:"Grass",c:"S"},
+"Giga Drain":{t:"Grass",c:"S"},"Grass Knot":{t:"Grass",c:"S"},"Grass Pledge":{t:"Grass",c:"S"},
+"Grassy Glide":{t:"Grass",c:"P"},"Horn Leech":{t:"Grass",c:"P"},"Leaf Blade":{t:"Grass",c:"P"},
+"Leaf Storm":{t:"Grass",c:"S"},"Leaf Tornado":{t:"Grass",c:"S"},"Leech Seed":{t:"Grass",c:"O"},
+"Magical Leaf":{t:"Grass",c:"S"},"Petal Blizzard":{t:"Grass",c:"P"},"Petal Dance":{t:"Grass",c:"S"},
+"Power Whip":{t:"Grass",c:"P"},"Razor Leaf":{t:"Grass",c:"P"},"Seed Bomb":{t:"Grass",c:"P"},
+"Solar Beam":{t:"Grass",c:"S"},"Solar Blade":{t:"Grass",c:"P"},"Spore":{t:"Grass",c:"O"},
+"Synthesis":{t:"Grass",c:"O"},"Trailblaze":{t:"Grass",c:"P"},"Wood Hammer":{t:"Grass",c:"P"},
+"Floral Healing":{t:"Grass",c:"O"},"Flower Trick":{t:"Grass",c:"P"},"Ivy Cudgel":{t:"Grass",c:"P"},
+// ICE
+"Aurora Beam":{t:"Ice",c:"S"},"Aurora Veil":{t:"Ice",c:"O"},"Avalanche":{t:"Ice",c:"P"},
+"Blizzard":{t:"Ice",c:"S"},"Freeze-Dry":{t:"Ice",c:"S"},"Frost Breath":{t:"Ice",c:"S"},
+"Glacial Lance":{t:"Ice",c:"P"},"Haze":{t:"Ice",c:"O"},"Ice Ball":{t:"Ice",c:"P"},
+"Ice Beam":{t:"Ice",c:"S"},"Ice Fang":{t:"Ice",c:"P"},"Ice Hammer":{t:"Ice",c:"P"},
+"Ice Punch":{t:"Ice",c:"P"},"Ice Shard":{t:"Ice",c:"P"},"Ice Spinner":{t:"Ice",c:"P"},
+"Icicle Crash":{t:"Ice",c:"P"},"Icicle Spear":{t:"Ice",c:"P"},"Icy Wind":{t:"Ice",c:"S"},
+"Mist":{t:"Ice",c:"O"},"Powder Snow":{t:"Ice",c:"S"},"Snowscape":{t:"Ice",c:"O"},
+"Chilly Reception":{t:"Ice",c:"O"},
+// FIGHTING
+"Arm Thrust":{t:"Fighting",c:"P"},"Aura Sphere":{t:"Fighting",c:"S"},"Brick Break":{t:"Fighting",c:"P"},
+"Circle Throw":{t:"Fighting",c:"P"},"Close Combat":{t:"Fighting",c:"P"},"Counter":{t:"Fighting",c:"P"},
+"Cross Chop":{t:"Fighting",c:"P"},"Detect":{t:"Fighting",c:"O"},"Double Kick":{t:"Fighting",c:"P"},
+"Drain Punch":{t:"Fighting",c:"P"},"Dynamic Punch":{t:"Fighting",c:"P"},"Final Gambit":{t:"Fighting",c:"S"},
+"Flying Press":{t:"Fighting",c:"P"},"Focus Blast":{t:"Fighting",c:"S"},"Focus Punch":{t:"Fighting",c:"P"},
+"Force Palm":{t:"Fighting",c:"P"},"Hammer Arm":{t:"Fighting",c:"P"},"High Jump Kick":{t:"Fighting",c:"P"},
+"Jump Kick":{t:"Fighting",c:"P"},"Karate Chop":{t:"Fighting",c:"P"},"Low Kick":{t:"Fighting",c:"P"},
+"Low Sweep":{t:"Fighting",c:"P"},"Mach Punch":{t:"Fighting",c:"P"},"Reversal":{t:"Fighting",c:"P"},
+"Rolling Kick":{t:"Fighting",c:"P"},"Sacred Sword":{t:"Fighting",c:"P"},"Sky Uppercut":{t:"Fighting",c:"P"},
+"Submission":{t:"Fighting",c:"P"},"Superpower":{t:"Fighting",c:"P"},"Triple Axel":{t:"Fighting",c:"P"},
+"Vacuum Wave":{t:"Fighting",c:"S"},"Vital Throw":{t:"Fighting",c:"P"},"Wake-Up Slap":{t:"Fighting",c:"P"},
+"Wicked Blow":{t:"Fighting",c:"P"},"Surging Strikes":{t:"Fighting",c:"P"},"Victory Dance":{t:"Fighting",c:"O"},
+"Collision Course":{t:"Fighting",c:"P"},
+// POISON
+"Acid":{t:"Poison",c:"S"},"Acid Spray":{t:"Poison",c:"S"},"Barb Barrage":{t:"Poison",c:"P"},
+"Clear Smog":{t:"Poison",c:"S"},"Cross Poison":{t:"Poison",c:"P"},"Dire Claw":{t:"Poison",c:"P"},
+"Gunk Shot":{t:"Poison",c:"P"},"Mortal Spin":{t:"Poison",c:"P"},"Noxious Torque":{t:"Poison",c:"P"},
+"Poison Fang":{t:"Poison",c:"P"},"Poison Gas":{t:"Poison",c:"O"},"Poison Jab":{t:"Poison",c:"P"},
+"Poison Sting":{t:"Poison",c:"P"},"Poison Tail":{t:"Poison",c:"P"},"Shell Side Arm":{t:"Poison",c:"S"},
+"Sludge":{t:"Poison",c:"S"},"Sludge Bomb":{t:"Poison",c:"S"},"Sludge Wave":{t:"Poison",c:"S"},
+"Smog":{t:"Poison",c:"S"},"Toxic":{t:"Poison",c:"O"},"Toxic Spikes":{t:"Poison",c:"O"},
+"Toxic Thread":{t:"Poison",c:"O"},"Venoshock":{t:"Poison",c:"S"},"Venom Drench":{t:"Poison",c:"O"},
+// GROUND
+"Bone Club":{t:"Ground",c:"P"},"Bone Rush":{t:"Ground",c:"P"},"Bonemerang":{t:"Ground",c:"P"},
+"Bulldoze":{t:"Ground",c:"P"},"Dig":{t:"Ground",c:"P"},"Earth Power":{t:"Ground",c:"S"},
+"Earthen Wrath":{t:"Ground",c:"S"},"Earthquake":{t:"Ground",c:"P"},"Fissure":{t:"Ground",c:"P"},
+"High Horsepower":{t:"Ground",c:"P"},"Magnitude":{t:"Ground",c:"P"},"Mud Bomb":{t:"Ground",c:"S"},
+"Mud Shot":{t:"Ground",c:"S"},"Mud Slap":{t:"Ground",c:"S"},"Muddy Water":{t:"Ground",c:"S"},
+"Sand Attack":{t:"Ground",c:"O"},"Sand Tomb":{t:"Ground",c:"P"},"Shore Up":{t:"Ground",c:"O"},
+"Spikes":{t:"Ground",c:"O"},"Stomping Tantrum":{t:"Ground",c:"P"},"Thousand Arrows":{t:"Ground",c:"P"},
+"Thousand Waves":{t:"Ground",c:"P"},"Precipice Blades":{t:"Ground",c:"P"},
+// FLYING
+"Acrobatics":{t:"Flying",c:"P"},"Aerial Ace":{t:"Flying",c:"P"},"Air Cutter":{t:"Flying",c:"S"},
+"Air Slash":{t:"Flying",c:"S"},"Bounce":{t:"Flying",c:"P"},"Brave Bird":{t:"Flying",c:"P"},
+"Defog":{t:"Flying",c:"O"},"Double Team":{t:"Flying",c:"O"},"Drill Peck":{t:"Flying",c:"P"},
+"Dual Wingbeat":{t:"Flying",c:"P"},"Feather Dance":{t:"Flying",c:"O"},"Fly":{t:"Flying",c:"P"},
+"Hurricane":{t:"Flying",c:"S"},"Peck":{t:"Flying",c:"P"},"Pluck":{t:"Flying",c:"P"},
+"Roost":{t:"Flying",c:"O"},"Sky Attack":{t:"Flying",c:"P"},"Sky Drop":{t:"Flying",c:"P"},
+"Tailwind":{t:"Flying",c:"O"},"Wing Attack":{t:"Flying",c:"P"},"Bleakwind Storm":{t:"Flying",c:"S"},
+"Floaty Fall":{t:"Flying",c:"P"},
+// PSYCHIC
+"Ally Switch":{t:"Psychic",c:"O"},"Calm Mind":{t:"Psychic",c:"O"},"Confusion":{t:"Psychic",c:"S"},
+"Cosmic Power":{t:"Psychic",c:"O"},"Dream Eater":{t:"Psychic",c:"S"},"Expanding Force":{t:"Psychic",c:"S"},
+"Extrasensory":{t:"Psychic",c:"S"},"Future Sight":{t:"Psychic",c:"S"},"Guard Split":{t:"Psychic",c:"O"},
+"Healing Wish":{t:"Psychic",c:"O"},"Heart Stamp":{t:"Psychic",c:"P"},"Hyper Space Fury":{t:"Psychic",c:"P"},
+"Kinesis":{t:"Psychic",c:"O"},"Luster Purge":{t:"Psychic",c:"S"},"Magic Coat":{t:"Psychic",c:"O"},
+"Miracle Eye":{t:"Psychic",c:"O"},"Mist Ball":{t:"Psychic",c:"S"},"Photon Geyser":{t:"Psychic",c:"S"},
+"Power Swap":{t:"Psychic",c:"O"},"Psybeam":{t:"Psychic",c:"S"},"Psychic":{t:"Psychic",c:"S"},
+"Psychic Fangs":{t:"Psychic",c:"P"},"Psychic Noise":{t:"Psychic",c:"S"},"Psychic Terrain":{t:"Psychic",c:"O"},
+"Psycho Cut":{t:"Psychic",c:"P"},"Psycho Shift":{t:"Psychic",c:"O"},"Psyshock":{t:"Psychic",c:"S"},
+"Psystrike":{t:"Psychic",c:"S"},"Rest":{t:"Psychic",c:"O"},"Skill Swap":{t:"Psychic",c:"O"},
+"Stored Power":{t:"Psychic",c:"S"},"Trick":{t:"Psychic",c:"O"},"Trick Room":{t:"Psychic",c:"O"},
+"Zen Headbutt":{t:"Psychic",c:"P"},"Esper Wing":{t:"Psychic",c:"S"},"Lumina Crash":{t:"Psychic",c:"S"},
+// BUG
+"Attack Order":{t:"Bug",c:"P"},"Bug Bite":{t:"Bug",c:"P"},"Bug Buzz":{t:"Bug",c:"S"},
+"Defend Order":{t:"Bug",c:"O"},"First Impression":{t:"Bug",c:"P"},"Fury Cutter":{t:"Bug",c:"P"},
+"Heal Order":{t:"Bug",c:"O"},"Infestation":{t:"Bug",c:"S"},"Lunge":{t:"Bug",c:"P"},
+"Megahorn":{t:"Bug",c:"P"},"Pin Missile":{t:"Bug",c:"P"},"Pollen Puff":{t:"Bug",c:"S"},
+"Quiver Dance":{t:"Bug",c:"O"},"Signal Beam":{t:"Bug",c:"S"},"Silver Wind":{t:"Bug",c:"S"},
+"Skitter Smack":{t:"Bug",c:"P"},"String Shot":{t:"Bug",c:"O"},"Struggle Bug":{t:"Bug",c:"S"},
+"Tail Glow":{t:"Bug",c:"O"},"Twineedle":{t:"Bug",c:"P"},"U-turn":{t:"Bug",c:"P"},
+"X-Scissor":{t:"Bug",c:"P"},"Leech Life":{t:"Bug",c:"P"},"Syrup Bomb":{t:"Bug",c:"S"},
+// ROCK
+"Accelerock":{t:"Rock",c:"P"},"Ancient Power":{t:"Rock",c:"S"},"Diamond Storm":{t:"Rock",c:"P"},
+"Head Smash":{t:"Rock",c:"P"},"Power Gem":{t:"Rock",c:"S"},"Rock Blast":{t:"Rock",c:"P"},
+"Rock Polish":{t:"Rock",c:"O"},"Rock Slide":{t:"Rock",c:"P"},"Rock Throw":{t:"Rock",c:"P"},
+"Rock Tomb":{t:"Rock",c:"P"},"Rock Wrecker":{t:"Rock",c:"P"},"Rollout":{t:"Rock",c:"P"},
+"Smack Down":{t:"Rock",c:"P"},"Stealth Rock":{t:"Rock",c:"O"},"Stone Axe":{t:"Rock",c:"P"},
+"Stone Edge":{t:"Rock",c:"P"},"Wide Guard":{t:"Rock",c:"O"},
+// GHOST
+"Astonish":{t:"Ghost",c:"P"},"Astral Barrage":{t:"Ghost",c:"S"},"Curse":{t:"Ghost",c:"O"},
+"Destiny Bond":{t:"Ghost",c:"O"},"Grudge":{t:"Ghost",c:"O"},"Hex":{t:"Ghost",c:"S"},
+"Lick":{t:"Ghost",c:"P"},"Night Shade":{t:"Ghost",c:"S"},"Ominous Wind":{t:"Ghost",c:"S"},
+"Pain Split":{t:"Ghost",c:"O"},"Phantom Force":{t:"Ghost",c:"P"},"Poltergeist":{t:"Ghost",c:"P"},
+"Shadow Ball":{t:"Ghost",c:"S"},"Shadow Bone":{t:"Ghost",c:"P"},"Shadow Claw":{t:"Ghost",c:"P"},
+"Shadow Force":{t:"Ghost",c:"P"},"Shadow Punch":{t:"Ghost",c:"P"},"Shadow Sneak":{t:"Ghost",c:"P"},
+"Spite":{t:"Ghost",c:"O"},"Spirit Shackle":{t:"Ghost",c:"P"},"Will-O-Wisp":{t:"Fire",c:"O"},
+"Infernal Parade":{t:"Ghost",c:"S"},"Last Respects":{t:"Ghost",c:"P"},
+// DRAGON
+"Clanging Scales":{t:"Dragon",c:"S"},"Clangorous Soul":{t:"Dragon",c:"O"},"Comets":{t:"Dragon",c:"P"},
+"Dragon Breath":{t:"Dragon",c:"S"},"Dragon Claw":{t:"Dragon",c:"P"},"Dragon Dance":{t:"Dragon",c:"O"},
+"Dragon Darts":{t:"Dragon",c:"P"},"Dragon Energy":{t:"Dragon",c:"S"},"Dragon Hammer":{t:"Dragon",c:"P"},
+"Dragon Pulse":{t:"Dragon",c:"S"},"Dragon Rage":{t:"Dragon",c:"S"},"Dragon Rush":{t:"Dragon",c:"P"},
+"Dragon Tail":{t:"Dragon",c:"P"},"Draco Meteor":{t:"Dragon",c:"S"},"Dual Chop":{t:"Dragon",c:"P"},
+"Outrage":{t:"Dragon",c:"P"},"Roar of Time":{t:"Dragon",c:"S"},"Spacial Rend":{t:"Dragon",c:"S"},
+"Twister":{t:"Dragon",c:"S"},"Breaking Swipe":{t:"Dragon",c:"P"},"Scale Shot":{t:"Dragon",c:"P"},
+// DARK
+"Assurance":{t:"Dark",c:"P"},"Beat Up":{t:"Dark",c:"P"},"Bite":{t:"Dark",c:"P"},
+"Brutal Swing":{t:"Dark",c:"P"},"Crunch":{t:"Dark",c:"P"},"Dark Pulse":{t:"Dark",c:"S"},
+"Dark Void":{t:"Dark",c:"O"},"Darkest Lariat":{t:"Dark",c:"P"},"Embargo":{t:"Dark",c:"O"},
+"Fake Tears":{t:"Dark",c:"O"},"Feint Attack":{t:"Dark",c:"P"},"Flatter":{t:"Dark",c:"O"},
+"Fling":{t:"Dark",c:"P"},"Foul Play":{t:"Dark",c:"P"},"Hone Claws":{t:"Dark",c:"O"},
+"Knock Off":{t:"Dark",c:"P"},"Kowtow Cleave":{t:"Dark",c:"P"},"Memento":{t:"Dark",c:"O"},
+"Nasty Plot":{t:"Dark",c:"O"},"Night Daze":{t:"Dark",c:"S"},"Night Slash":{t:"Dark",c:"P"},
+"Parting Shot":{t:"Dark",c:"O"},"Payback":{t:"Dark",c:"P"},"Power Trip":{t:"Dark",c:"P"},
+"Punishment":{t:"Dark",c:"P"},"Pursuit":{t:"Dark",c:"P"},"Quash":{t:"Dark",c:"O"},
+"Snatch":{t:"Dark",c:"O"},"Sucker Punch":{t:"Dark",c:"P"},"Taunt":{t:"Dark",c:"O"},
+"Throat Chop":{t:"Dark",c:"P"},"Torment":{t:"Dark",c:"O"},"Wicked Blow":{t:"Dark",c:"P"},
+"Chatter":{t:"Flying",c:"S"},"Fiery Wrath":{t:"Dark",c:"S"},"Population Bomb":{t:"Normal",c:"P"},
+"Ruination":{t:"Dark",c:"S"},
+// STEEL
+"Anchor Shot":{t:"Steel",c:"P"},"Autotomize":{t:"Steel",c:"O"},"Behemoth Bash":{t:"Steel",c:"P"},
+"Behemoth Blade":{t:"Steel",c:"P"},"Bullet Punch":{t:"Steel",c:"P"},"Corkscrew Crash":{t:"Steel",c:"P"},
+"Double Iron Bash":{t:"Steel",c:"P"},"Flash Cannon":{t:"Steel",c:"S"},"Gear Grind":{t:"Steel",c:"P"},
+"Gyro Ball":{t:"Steel",c:"P"},"Hard Press":{t:"Steel",c:"P"},"Heavy Slam":{t:"Steel",c:"P"},
+"Iron Defense":{t:"Steel",c:"O"},"Iron Head":{t:"Steel",c:"P"},"Iron Tail":{t:"Steel",c:"P"},
+"King's Shield":{t:"Steel",c:"O"},"Magnet Bomb":{t:"Steel",c:"P"},"Metal Burst":{t:"Steel",c:"P"},
+"Metal Claw":{t:"Steel",c:"P"},"Metal Sound":{t:"Steel",c:"O"},"Meteor Mash":{t:"Steel",c:"P"},
+"Mirror Shot":{t:"Steel",c:"S"},"Smart Strike":{t:"Steel",c:"P"},"Steel Beam":{t:"Steel",c:"S"},
+"Steel Roller":{t:"Steel",c:"P"},"Steel Wing":{t:"Steel",c:"P"},"Sunsteel Strike":{t:"Steel",c:"P"},
+"Tinkaton Hammer":{t:"Steel",c:"P"},"Gigaton Hammer":{t:"Steel",c:"P"},
+// FAIRY
+"Baby-Doll Eyes":{t:"Fairy",c:"O"},"Charm":{t:"Fairy",c:"O"},"Crafty Shield":{t:"Fairy",c:"O"},
+"Dazzling Gleam":{t:"Fairy",c:"S"},"Decorate":{t:"Fairy",c:"O"},"Disarming Voice":{t:"Fairy",c:"S"},
+"Draining Kiss":{t:"Fairy",c:"S"},"Fairy Lock":{t:"Fairy",c:"O"},"Fairy Wind":{t:"Fairy",c:"S"},
+"Fleur Cannon":{t:"Fairy",c:"S"},"Follow Me":{t:"Normal",c:"O"},"Geomancy":{t:"Fairy",c:"O"},
+"Gleam":{t:"Fairy",c:"S"},"Light of Ruin":{t:"Fairy",c:"S"},"Misty Explosion":{t:"Fairy",c:"S"},
+"Misty Terrain":{t:"Fairy",c:"O"},"Moonblast":{t:"Fairy",c:"S"},"Moonlight":{t:"Fairy",c:"O"},
+"Play Rough":{t:"Fairy",c:"P"},"Spirit Break":{t:"Fairy",c:"P"},"Sparkling Aria":{t:"Water",c:"S"},
+"Strange Steam":{t:"Fairy",c:"S"},"Sweet Kiss":{t:"Fairy",c:"O"},"Tickle":{t:"Normal",c:"O"},
+"Twinkle Tackle":{t:"Fairy",c:"S"},"Wish":{t:"Normal",c:"O"},"Alluring Voice":{t:"Fairy",c:"S"},
+// MISC STATUS/SUPPORT
+"Helping Hand":{t:"Normal",c:"O"},"Reflect":{t:"Psychic",c:"O"},"Light Screen":{t:"Psychic",c:"O"},
+"Spikes":{t:"Ground",c:"O"},"Toxic Spikes":{t:"Poison",c:"O"},"Stealth Rock":{t:"Rock",c:"O"},
+"Defog":{t:"Flying",c:"O"},"Rapid Spin":{t:"Normal",c:"P"},"Spin":{t:"Normal",c:"O"},
+"U-turn":{t:"Bug",c:"P"},"Volt Switch":{t:"Electric",c:"S"},"Flip Turn":{t:"Water",c:"P"},
+"Parting Shot":{t:"Dark",c:"O"},"Baton Pass":{t:"Normal",c:"O"},"Healing Wish":{t:"Psychic",c:"O"},
+"Lunar Dance":{t:"Psychic",c:"O"},"Instruct":{t:"Psychic",c:"O"},"Coaching":{t:"Fighting",c:"O"},
+"Life Dew":{t:"Water",c:"O"},"Aromatic Mist":{t:"Fairy",c:"O"},"Heal Pulse":{t:"Psychic",c:"O"},
+"After You":{t:"Normal",c:"O"},"Rage Powder":{t:"Bug",c:"O"},"Wide Guard":{t:"Rock",c:"O"},
+"Quick Guard":{t:"Fighting",c:"O"},"Mat Block":{t:"Fighting",c:"O"},"Baneful Bunker":{t:"Poison",c:"O"},
+"Obstruct":{t:"Dark",c:"O"},"Spiky Shield":{t:"Grass",c:"O"},"Silk Trap":{t:"Bug",c:"O"},
+};
+
+// STATE
+var savedTeams = JSON.parse(localStorage.getItem("pt3_teams") || "null") || (function(){var a=[];for(var i=0;i<10;i++)a.push({name:"",mons:[null,null,null,null,null,null]});return a}());
+var enemyTeam=[null,null,null,null,null,null];
+var selectedTeamIdx=null;
+var editingTeamIdx=null;
+var editingTeamData=null;
+var editingMonIdx=null;
+var editingMoveIdx=null;
+var pokeContext="team"; // "team" or "enemy"
+
+// INIT - populate team cards from saved data
+function initTeamCards(){
+  for(var i=0;i<10;i++) refreshTeamCard(i);
+}
+
+function refreshTeamCard(i){
+  var t=savedTeams[i];
+  var nameEl=document.getElementById("tcn-"+i);
+  var monsEl=document.getElementById("tcm-"+i);
+  var clrEl=document.getElementById("tc-clr-"+i);
+  var hasData=t.name||t.mons.some(function(m){return m!==null});
+  nameEl.textContent=t.name||("TEAM "+(i+1));
+  nameEl.className=t.name?"tc-name":"tc-name empty-name";
+  clrEl.style.display=hasData?"inline-block":"none";
+  var chips="";
+  for(var j=0;j<6;j++){
+    var m=t.mons[j];
+    chips+=m?('<span class="mon-chip">'+m.name+'</span>'):'<span class="mon-chip empty">—</span>';
+  }
+  monsEl.innerHTML=chips;
+}
+
+// NAV
+function showPage(id){
+  document.getElementById("page-teams").classList.remove("visible");
+  document.getElementById("page-battle").classList.remove("visible");
+  document.getElementById("tab-teams").classList.remove("active");
+  document.getElementById("tab-battle").classList.remove("active");
+  document.getElementById("page-"+id).classList.add("visible");
+  document.getElementById("tab-"+id).classList.add("active");
+  if(id==="battle")refreshBattleMyTeam();
+}
+
+function closeModal(id){document.getElementById(id).classList.remove("open")}
+
+document.querySelectorAll(".modal-overlay").forEach(function(m){
+  m.addEventListener("click",function(e){if(e.target===this)this.classList.remove("open");});
+});
+
+// TEAM EDITOR
+function openTeamEditor(i){
+  editingTeamIdx=i;
+  editingTeamData=JSON.parse(JSON.stringify(savedTeams[i]));
+  document.getElementById("ed-title").textContent="TEAM "+(i+1);
+  document.getElementById("ed-name").value=editingTeamData.name||"";
+  renderEditorContent();
+  document.getElementById("modal-editor").classList.add("open");
+}
+
+function renderEditorContent(){
+  var html="";
+  for(var mi=0;mi<6;mi++){
+    var mon=editingTeamData.mons[mi];
+    if(!mon){
+      html+='<div class="mon-editor"><div class="me-header"><span style="font-family:sans-serif;letter-spacing:2px;color:var(--dim);font-size:.8rem">SLOT '+(mi+1)+'</span><button class="btn btn-secondary btn-sm" onclick="openPokeSearch('+mi+')">+ ADD</button></div></div>';
+    } else {
+      var types=mon.types.map(function(t){return '<span class="type-pip t-'+t+'">'+t+'</span>';}).join("");
+      var ab=mon.ability||null;
+      var abData=ab?ABILITY_DB[ab]:null;
+      var itm=mon.item||null;
+      var itmData=itm?MEGA_STONES[itm]:null;
+      var canMega=MEGA_MON_TO_STONE[mon.name]&&MEGA_MON_TO_STONE[mon.name].length>0;
+      var abilitySlot='<div class="move-slot'+(ab?" filled":"")+' ability-req" onclick="openAbilitySearch('+mi+')" style="grid-column:span 2;margin-bottom:6px">';
+      abilitySlot+='<div class="ms-label">ABILITY'+(ab?'':'  ⚠ REQUIRED')+'</div>';
+      if(ab){abilitySlot+='<div class="ms-name">'+ab+'</div>';if(abData&&abData.note){abilitySlot+='<span class="ms-cat">'+abData.note+'</span>';}}
+      else{abilitySlot+='<div class="ms-name" style="color:var(--red)">tap to set ability</div>';}
+      abilitySlot+='</div>';
+      var itemSlot='';
+      if(canMega){
+        itemSlot='<div class="move-slot'+(itm?" filled":"")+'" onclick="openItemSearch('+mi+')" style="grid-column:span 2;margin-bottom:6px;border-color:'+(itm?"rgba(200,255,0,.3)":"")+';">';
+        itemSlot+='<div class="ms-label">MEGA STONE '+(itm?"✓":"(optional)")+'</div>';
+        if(itm){itemSlot+='<div class="ms-name">'+itm+'</div>';if(itmData){itemSlot+='<span class="ms-cat">'+itmData.note+'</span>';}}
+        else{itemSlot+='<div class="ms-name" style="color:var(--dim)">tap to assign stone</div>';}
+        itemSlot+='</div>';
+      }
+      var moves="";
+      for(var mvi=0;mvi<4;mvi++){
+        var mv=mon.moves&&mon.moves[mvi]?mon.moves[mvi]:null;
+        var md=mv?MV[mv]:null;
+        var cat=md?(md.c==="P"?"Phys":md.c==="S"?"Spec":"Other"):"";
+        moves+='<div class="move-slot'+(mv?" filled":"")+'" onclick="openMoveSearch('+mi+','+mvi+')">';
+        moves+='<div class="ms-label">MOVE '+(mvi+1)+'</div>';
+        if(mv){moves+='<div class="ms-name">'+mv+'</div><span class="ms-type t-'+md.t+'">'+md.t+'</span><span class="ms-cat">'+cat+'</span>';}
+        else{moves+='<div class="ms-name" style="color:var(--dim)">tap to add</div>';}
+        moves+='</div>';
+      }
+      html+='<div class="mon-editor"><div class="me-header"><div><div class="me-name">'+mon.name+'</div><div class="mon-types">'+types+'</div></div><button class="icon-btn" style="font-size:1rem" onclick="removeMon('+mi+')">✕</button></div><div class="moves-grid">'+abilitySlot+itemSlot+moves+'</div></div>';
+    }
+  }
+  document.getElementById("ed-content").innerHTML=html;
+}
+
+function removeMon(mi){editingTeamData.mons[mi]=null;renderEditorContent();}
+
+function saveTeam(){
+  editingTeamData.name=document.getElementById("ed-name").value.trim();
+  savedTeams[editingTeamIdx]=editingTeamData;
+  localStorage.setItem("pt3_teams",JSON.stringify(savedTeams));
+  closeModal("modal-editor");
+  refreshTeamCard(editingTeamIdx);
+}
+
+function clearTeam(e,i){
+  e.stopPropagation();
+  savedTeams[i]={name:"",mons:[null,null,null,null,null,null]};
+  localStorage.setItem("pt3_teams",JSON.stringify(savedTeams));
+  refreshTeamCard(i);
+}
+
+// POKEMON SEARCH
+function openPokeSearch(mi){
+  editingMonIdx=mi;
+  pokeContext="team";
+  document.getElementById("poke-title").textContent="SLOT "+(mi+1)+" — SELECT POKEMON";
+  document.getElementById("poke-input").value="";
+  filterPoke();
+  document.getElementById("modal-poke").classList.add("open");
+  setTimeout(function(){document.getElementById("poke-input").focus();},150);
+}
+
+function filterPoke(){
+  var q=document.getElementById("poke-input").value.toLowerCase();
+  var inTeam=editingTeamData?editingTeamData.mons.filter(Boolean).map(function(m){return m.name;}):[];
+  var inEnemy=enemyTeam.filter(Boolean).map(function(m){return m.name;});
+  var exclude=pokeContext==="team"?inTeam:inEnemy;
+  var filtered=PKM.filter(function(p){return p.n.toLowerCase().indexOf(q)>-1&&exclude.indexOf(p.n)<0;}).slice(0,40);
+  var html="";
+  if(!filtered.length){html='<div class="no-results">No Pokemon found</div>';}
+  else filtered.forEach(function(p){
+    var types=p.t.map(function(t){return '<span class="type-pip t-'+t+'">'+t+'</span>';}).join("");
+    html+='<div class="s-result" onclick="selectPoke(\''+p.n+'\')"><span class="s-rname">'+p.n+'</span><div style="display:flex;gap:4px">'+types+'</div></div>';
+  });
+  document.getElementById("poke-results").innerHTML=html;
+}
+
+function selectPoke(name){
+  var p=PKM.find(function(x){return x.n===name;});
+  if(!p)return;
+  if(pokeContext==="team"){
+    editingTeamData.mons[editingMonIdx]={name:p.n,types:p.t,ability:null,item:null,moves:[null,null,null,null]};
+    closeModal("modal-poke");
+    renderEditorContent();
+  } else {
+    enemyTeam[editingMonIdx]={name:p.n,types:p.t};
+    closeModal("modal-poke");
+    refreshEnemySlot(editingMonIdx);
+    updateAnalyzeBtn();
+    document.getElementById("results-area").innerHTML="";
+  }
+}
+
+// MOVE SEARCH
+function openMoveSearch(mi,mvi){
+  editingMonIdx=mi;
+  editingMoveIdx=mvi;
+  var mon=editingTeamData.mons[mi];
+  document.getElementById("move-title").textContent=mon.name+" — MOVE "+(mvi+1);
+  document.getElementById("move-input").value="";
+  filterMove();
+  document.getElementById("modal-move").classList.add("open");
+  setTimeout(function(){document.getElementById("move-input").focus();},150);
+}
+
+function filterMove(){
+  var q=document.getElementById("move-input").value.toLowerCase();
+  var moves=Object.keys(MV).sort().filter(function(m){return m.toLowerCase().indexOf(q)>-1;}).slice(0,50);
+  var html='<div class="s-result" onclick="selectMove(null)"><span class="s-rname" style="color:var(--dim)">— Clear move —</span></div>';
+  moves.forEach(function(mv){
+    var d=MV[mv];
+    var cat=d.c==="P"?"Physical":d.c==="S"?"Special":"Other";
+    html+='<div class="s-result" onclick="selectMove(\''+mv.replace(/'/g,"&#39;")+'\')"><span class="s-rname">'+mv+'</span><div style="text-align:right"><span class="type-pip t-'+d.t+'">'+d.t+'</span><span class="s-rmeta" style="margin-left:4px">'+cat+'</span></div></div>';
+  });
+  document.getElementById("move-results").innerHTML=html;
+}
+
+function selectMove(mv){
+  if(!editingTeamData.mons[editingMonIdx].moves)editingTeamData.mons[editingMonIdx].moves=[null,null,null,null];
+  editingTeamData.mons[editingMonIdx].moves[editingMoveIdx]=mv;
+  closeModal("modal-move");
+  renderEditorContent();
+}
+
+// ABILITY SEARCH
+function openAbilitySearch(mi){
+  editingMonIdx=mi;
+  var mon=editingTeamData.mons[mi];
+  document.getElementById("ability-title").textContent=mon.name+" — ABILITY";
+  document.getElementById("ability-input").value="";
+  filterAbility();
+  document.getElementById("modal-ability").classList.add("open");
+  setTimeout(function(){document.getElementById("ability-input").focus();},150);
+}
+
+function filterAbility(){
+  var q=document.getElementById("ability-input").value.toLowerCase();
+  var mon=editingTeamData.mons[editingMonIdx];
+  // Get legal abilities for this species, fall back to full list if unknown
+  var legalAbilities=MON_ABILITIES[mon.name]||Object.keys(ABILITY_DB);
+  var filtered=legalAbilities.filter(function(a){return a.toLowerCase().indexOf(q)>-1;});
+  var html='<div class="s-result" onclick="selectAbility(null)"><span class="s-rname" style="color:var(--dim)">— Clear ability —</span></div>';
+  filtered.forEach(function(ab){
+    var d=ABILITY_DB[ab]||{lead:0,bulk:0,note:""};
+    var tag=d.lead>=3?'<span style="font-size:.6rem;color:#c8ff00;font-weight:700">LEAD</span>':
+            d.lead>=2?'<span style="font-size:.6rem;color:#00d4ff;font-weight:700">SETUP</span>':
+            (d.bulk||0)>=2?'<span style="font-size:.6rem;color:#a78bfa;font-weight:700">BULK</span>':
+            d.coverage?'<span style="font-size:.6rem;color:#f3d23b;font-weight:700">COVERAGE</span>':'';
+    html+='<div class="s-result" onclick="selectAbility(\''+ab.replace(/'/g,"&#39;")+'\')"><div style="flex:1"><div class="s-rname">'+ab+'</div><div style="font-size:.65rem;color:var(--dim2)">'+(d.note||'')+'</div></div>'+tag+'</div>';
+  });
+  document.getElementById("ability-results").innerHTML=html;
+}
+
+function selectAbility(ab){
+  editingTeamData.mons[editingMonIdx].ability=ab;
+  closeModal("modal-ability");
+  renderEditorContent();
+}
+
+// ITEM SEARCH
+function openItemSearch(mi){
+  editingMonIdx=mi;
+  var mon=editingTeamData.mons[mi];
+  document.getElementById("item-title").textContent=mon.name+" — MEGA STONE";
+  var stones=MEGA_MON_TO_STONE[mon.name]||[];
+  var html='<div class="s-result" onclick="selectItem(null)"><span class="s-rname" style="color:var(--dim)">— No Mega Stone —</span></div>';
+  stones.forEach(function(stone){
+    var d=MEGA_STONES[stone];
+    html+='<div class="s-result" onclick="selectItem(\''+stone+'\')"><div style="flex:1"><div class="s-rname" style="color:#c8ff00">'+stone+'</div><div style="font-size:.65rem;color:var(--dim2)">'+d.note+'</div></div><span style="font-size:.6rem;color:#c8ff00;font-weight:700">MEGA</span></div>';
+  });
+  document.getElementById("item-results").innerHTML=html;
+  document.getElementById("modal-item").classList.add("open");
+}
+
+function selectItem(item){
+  editingTeamData.mons[editingMonIdx].item=item;
+  closeModal("modal-item");
+  renderEditorContent();
+}
+
+// BATTLE PAGE
+function refreshBattleMyTeam(){
+  var container=document.getElementById("my-team-select");
+  var hasAny=savedTeams.some(function(t){return t.name||t.mons.some(Boolean);});
+  if(!hasAny){container.innerHTML='<div class="empty-state">No saved teams yet. Go to MY TEAMS first.</div>';selectedTeamIdx=null;updateAnalyzeBtn();return;}
+  var html="";
+  savedTeams.forEach(function(t,i){
+    var hasData=t.name||t.mons.some(Boolean);
+    if(!hasData)return;
+    var isSel=selectedTeamIdx===i;
+    var style=isSel?"border-color:var(--accent);background:rgba(200,255,0,.04)":"";
+    var badge=isSel?'<span class="sel-badge">SELECTED ✓</span>':"";
+    var name=t.name||("TEAM "+(i+1));
+    var chips=t.mons.filter(Boolean).map(function(m){return '<span class="mon-chip">'+m.name+'</span>';}).join("");
+    html+='<div class="team-card" onclick="selectMyTeam('+i+')" style="'+style+'"><div class="tc-header"><div class="tc-name">'+name+'</div>'+badge+'</div><div class="tc-mons">'+chips+'</div></div>';
+  });
+  container.innerHTML=html;
+}
+
+function selectMyTeam(i){selectedTeamIdx=i;refreshBattleMyTeam();updateAnalyzeBtn();}
+
+function openEnemySlot(i){
+  editingMonIdx=i;
+  pokeContext="enemy";
+  document.getElementById("poke-title").textContent="OPPONENT SLOT "+(i+1);
+  document.getElementById("poke-input").value="";
+  filterPoke();
+  document.getElementById("modal-poke").classList.add("open");
+  setTimeout(function(){document.getElementById("poke-input").focus();},150);
+}
+
+function refreshEnemySlot(i){
+  var slot=document.getElementById("eslot-"+i);
+  var mon=enemyTeam[i];
+  if(mon){
+    var types=mon.types.map(function(t){return '<span class="type-pip t-'+t+'">'+t+'</span>';}).join("");
+    slot.className="slot filled";
+    slot.innerHTML='<div class="slot-x" onclick="removeEnemy(event,'+i+')">✕</div><div class="slot-name">'+mon.name+'</div><div style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center">'+types+'</div>';
+  } else {
+    slot.className="slot";
+    slot.innerHTML='<div class="slot-num">SLOT '+(i+1)+'</div><div class="slot-plus">+</div>';
+  }
+}
+
+function removeEnemy(e,i){e.stopPropagation();enemyTeam[i]=null;refreshEnemySlot(i);updateAnalyzeBtn();document.getElementById("results-area").innerHTML="";}
+
+function clearBattle(){for(var i=0;i<6;i++){enemyTeam[i]=null;refreshEnemySlot(i);}updateAnalyzeBtn();document.getElementById("results-area").innerHTML="";}
+
+function updateAnalyzeBtn(){
+  var hasMyTeam=selectedTeamIdx!==null&&savedTeams[selectedTeamIdx].mons.some(Boolean);
+  var hasEnemy=enemyTeam.some(Boolean);
+  document.getElementById("btn-analyze").disabled=!(hasMyTeam&&hasEnemy);
+}
+
+// ADD MISSING POKEMON
+var MISSING_PKM=[
+  {n:"Pidgeot",t:["Normal","Flying"]},{n:"Arbok",t:["Poison"]},{n:"Pikachu",t:["Electric"]},
+  {n:"Machamp",t:["Fighting"]},{n:"Victreebel",t:["Grass","Poison"]},{n:"Kangaskhan",t:["Normal"]},
+  {n:"Pinsir",t:["Bug"]},{n:"Tauros",t:["Normal"]},{n:"Gyarados",t:["Water","Flying"]},
+  {n:"Ditto",t:["Normal"]},{n:"Vaporeon",t:["Water"]},{n:"Flareon",t:["Fire"]},
+  {n:"Aerodactyl",t:["Rock","Flying"]},{n:"Meganium",t:["Grass"]},{n:"Typhlosion",t:["Fire"]},
+  {n:"Feraligatr",t:["Water"]},{n:"Ariados",t:["Bug","Poison"]},{n:"Ampharos",t:["Electric"]},
+  {n:"Azumarill",t:["Water","Fairy"]},{n:"Politoed",t:["Water"]},{n:"Forretress",t:["Bug","Steel"]},
+  {n:"Steelix",t:["Steel","Ground"]},{n:"Heracross",t:["Bug","Fighting"]},{n:"Houndoom",t:["Dark","Fire"]},
+  {n:"Sableye",t:["Dark","Ghost"]},{n:"Aggron",t:["Steel","Rock"]},{n:"Manectric",t:["Electric"]},
+  {n:"Sharpedo",t:["Water","Dark"]},{n:"Camerupt",t:["Fire","Ground"]},{n:"Altaria",t:["Dragon","Flying"]},
+  {n:"Milotic",t:["Water"]},{n:"Castform",t:["Normal"]},{n:"Banette",t:["Ghost"]},
+  {n:"Chimecho",t:["Psychic"]},{n:"Absol",t:["Dark"]},{n:"Glalie",t:["Ice"]},
+  {n:"Torterra",t:["Grass","Ground"]},{n:"Infernape",t:["Fire","Fighting"]},{n:"Empoleon",t:["Water","Steel"]},
+  {n:"Luxray",t:["Electric"]},{n:"Roserade",t:["Grass","Poison"]},{n:"Rampardos",t:["Rock"]},
+  {n:"Bastiodon",t:["Rock","Steel"]},{n:"Lopunny",t:["Normal"]},{n:"Spiritomb",t:["Ghost","Dark"]},
+  {n:"Abomasnow",t:["Grass","Ice"]},{n:"Leafeon",t:["Grass"]},{n:"Glaceon",t:["Ice"]},
+  {n:"Gliscor",t:["Ground","Flying"]},{n:"Froslass",t:["Ice","Ghost"]},{n:"Rotom",t:["Electric","Ghost"]},
+  {n:"Serperior",t:["Grass"]},{n:"Emboar",t:["Fire","Fighting"]},{n:"Samurott",t:["Water"]},
+  {n:"Watchog",t:["Normal"]},{n:"Liepard",t:["Dark"]},{n:"Simisage",t:["Grass"]},
+  {n:"Simisear",t:["Fire"]},{n:"Simipour",t:["Water"]},{n:"Audino",t:["Normal"]},
+  {n:"Conkeldurr",t:["Fighting"]},{n:"Krookodile",t:["Ground","Dark"]},{n:"Cofagrigus",t:["Ghost"]},
+  {n:"Garbodor",t:["Poison"]},{n:"Zoroark",t:["Dark"]},{n:"Vanilluxe",t:["Ice"]},
+  {n:"Emolga",t:["Electric","Flying"]},{n:"Chandelure",t:["Ghost","Fire"]},{n:"Beartic",t:["Ice"]},
+  {n:"Stunfisk",t:["Ground","Electric"]},{n:"Chesnaught",t:["Grass","Fighting"]},
+  {n:"Greninja",t:["Water","Dark"]},{n:"Diggersby",t:["Normal","Ground"]},{n:"Vivillon",t:["Bug","Flying"]},
+  {n:"Floette",t:["Fairy"]},{n:"Florges",t:["Fairy"]},{n:"Pangoro",t:["Fighting","Dark"]},
+  {n:"Furfrou",t:["Normal"]},{n:"Aegislash",t:["Steel","Ghost"]},{n:"Aromatisse",t:["Fairy"]},
+  {n:"Slurpuff",t:["Fairy"]},{n:"Clawitzer",t:["Water"]},{n:"Heliolisk",t:["Electric","Normal"]},
+  {n:"Tyrantrum",t:["Rock","Dragon"]},{n:"Aurorus",t:["Rock","Ice"]},{n:"Dedenne",t:["Electric","Fairy"]},
+  {n:"Klefki",t:["Steel","Fairy"]},{n:"Trevenant",t:["Ghost","Grass"]},{n:"Gourgeist",t:["Ghost","Grass"]},
+  {n:"Avalugg",t:["Ice"]},{n:"Noivern",t:["Flying","Dragon"]},{n:"Primarina",t:["Water","Fairy"]},
+  {n:"Toucannon",t:["Normal","Flying"]},{n:"Crabominable",t:["Fighting","Ice"]},{n:"Lycanroc",t:["Rock"]},
+  {n:"Mudsdale",t:["Ground"]},{n:"Araquanid",t:["Water","Bug"]},{n:"Passimian",t:["Fighting"]},
+  {n:"Drampa",t:["Normal","Dragon"]},{n:"Kommo-o",t:["Dragon","Fighting"]},{n:"Flapple",t:["Grass","Dragon"]},
+  {n:"Appletun",t:["Grass","Dragon"]},{n:"Sandaconda",t:["Ground"]},{n:"Polteageist",t:["Ghost"]},
+  {n:"Mr. Rime",t:["Ice","Psychic"]},{n:"Runerigus",t:["Ground","Ghost"]},{n:"Alcremie",t:["Fairy"]},
+  {n:"Morpeko",t:["Electric","Dark"]},{n:"Wyrdeer",t:["Normal","Psychic"]},{n:"Kleavor",t:["Bug","Rock"]},
+  {n:"Basculegion",t:["Water","Ghost"]},{n:"Meowscarada",t:["Grass","Dark"]},{n:"Skeledirge",t:["Fire","Ghost"]},
+  {n:"Quaquaval",t:["Water","Fighting"]},{n:"Garganacl",t:["Rock"]},{n:"Armarouge",t:["Fire","Psychic"]},
+  {n:"Ceruledge",t:["Fire","Ghost"]},{n:"Bellibolt",t:["Electric"]},{n:"Scovillain",t:["Grass","Fire"]},
+  {n:"Espathra",t:["Psychic"]},{n:"Tinkaton",t:["Fairy","Steel"]},{n:"Palafin",t:["Water"]},
+  {n:"Orthworm",t:["Steel"]},{n:"Sinistcha",t:["Grass","Ghost"]},{n:"Archaludon",t:["Steel","Dragon"]},
+  {n:"Hydrapple",t:["Grass","Dragon"]}
+];
+PKM.push.apply(PKM, MISSING_PKM);
+PKM.sort(function(a,b){return a.n.localeCompare(b.n);});
+
+// LEAD ROLE DETECTION
+var LEAD_MOVES={"Fake Out":3,"Tailwind":3,"Trick Room":3,"Thunder Wave":2,"Will-O-Wisp":2,"Taunt":2,"Stealth Rock":2,"Toxic Spikes":2,"Encore":2,"Psychic Terrain":2,"Misty Terrain":2,"Aurora Veil":2,"Reflect":1,"Light Screen":1,"Sunny Day":2,"Rain Dance":2,"Sandstorm":2,"Hail":2,"Yawn":1};
+var BACK_MOVES={"U-turn":2,"Volt Switch":2,"Flip Turn":2,"Baton Pass":2,"Wish":1,"Healing Wish":2,"Memento":2,"Parting Shot":2};
+var FAST_POKEMON=["Alakazam","Starmie","Gengar","Dragapult","Weavile","Jolteon","Zeraora","Talonflame","Hawlucha","Sneasler","Regieleki","Iron Bundle","Salazzle","Meowstic","Espeon","Raichu","Raichu-A","Beedrill","Garchomp","Greninja","Meowscarada","Aerodactyl","Noivern","Froslass","Crobat","Lycanroc","Accelgor","Liepard","Manectric","Heliolisk","Ninjask","Electrode","Jolteon","Absol","Mismagius","Zoroark","Chandelure","Toucannon","Incineroar"];
+var SLOW_SETUP=["Snorlax","Blissey","Slowbro","Slowking","Galarian Slowbro","Rhyperior","Hippowdon","Toxapex","Ferrothorn","Bronzong","Mamoswine","Goodra","Steelix","Aggron","Bastiodon","Cofagrigus","Avalugg","Mudsdale","Abomasnow","Conkeldurr","Garganacl","Orthworm","Forretress"];
+var INTIMIDATE_USERS=["Incineroar","Arcanine","Salamence","Landorus","Gyarados","Krookodile"];
+
+// LEGAL ABILITIES PER SPECIES
+var MON_ABILITIES={
+  "Venusaur":["Overgrow","Chlorophyll"],"Charizard":["Blaze","Solar Power"],"Blastoise":["Torrent","Rain Dish"],
+  "Beedrill":["Swarm","Sniper"],"Pidgeot":["Keen Eye","Tangled Feet","Big Pecks"],"Arbok":["Intimidate","Shed Skin","Unnerve"],
+  "Pikachu":["Static","Lightning Rod"],"Raichu":["Static","Lightning Rod"],"Clefable":["Cute Charm","Magic Guard","Unaware"],
+  "Ninetales":["Flash Fire","Drought"],"Arcanine":["Intimidate","Flash Fire","Justified"],"Alakazam":["Synchronize","Inner Focus","Magic Guard"],
+  "Machamp":["Guts","No Guard","Steadfast"],"Victreebel":["Chlorophyll","Gluttony"],"Slowbro":["Oblivious","Own Tempo","Regenerator"],
+  "Gengar":["Cursed Body"],"Kangaskhan":["Early Bird","Scrappy","Inner Focus"],"Starmie":["Illuminate","Natural Cure","Analytic"],
+  "Pinsir":["Hyper Cutter","Mold Breaker","Moxie"],"Tauros":["Intimidate","Anger Point","Sheer Force"],"Gyarados":["Intimidate","Moxie"],
+  "Ditto":["Limber","Imposter"],"Vaporeon":["Water Absorb","Hydration"],"Jolteon":["Volt Absorb","Quick Feet"],
+  "Flareon":["Flash Fire","Guts"],"Aerodactyl":["Rock Head","Pressure","Unnerve"],"Snorlax":["Immunity","Thick Fat","Gluttony"],
+  "Dragonite":["Inner Focus","Multiscale"],"Meganium":["Overgrow","Leaf Guard"],"Typhlosion":["Blaze","Flash Fire"],
+  "Feraligatr":["Torrent","Sheer Force"],"Ariados":["Swarm","Insomnia","Sniper"],"Ampharos":["Static","Plus"],
+  "Azumarill":["Thick Fat","Huge Power","Sap Sipper"],"Politoed":["Water Absorb","Damp","Drizzle"],
+  "Espeon":["Synchronize","Magic Bounce"],"Umbreon":["Synchronize","Inner Focus"],"Slowking":["Oblivious","Own Tempo","Regenerator"],
+  "Forretress":["Sturdy","Overcoat"],"Steelix":["Rock Head","Sturdy","Sheer Force"],"Scizor":["Swarm","Technician","Light Metal"],
+  "Heracross":["Swarm","Guts","Moxie"],"Skarmory":["Keen Eye","Sturdy","Weak Armor"],"Houndoom":["Early Bird","Flash Fire","Unnerve"],
+  "Tyranitar":["Sand Stream","Unnerve"],"Pelipper":["Keen Eye","Drizzle","Rain Dish"],"Gardevoir":["Synchronize","Trace","Telepathy"],
+  "Sableye":["Keen Eye","Stall","Prankster"],"Aggron":["Sturdy","Rock Head","Heavy Metal"],"Medicham":["Pure Power","Telepathy"],
+  "Manectric":["Static","Lightning Rod","Minus"],"Sharpedo":["Rough Skin","Speed Boost"],"Camerupt":["Magma Armor","Solid Rock","Anger Point"],
+  "Torkoal":["White Smoke","Drought","Shell Armor"],"Altaria":["Natural Cure","Cloud Nine"],"Milotic":["Marvel Scale","Competitive","Cute Charm"],
+  "Castform":["Forecast"],"Banette":["Insomnia","Frisk","Cursed Body"],"Chimecho":["Levitate"],
+  "Absol":["Pressure","Super Luck","Justified"],"Glalie":["Inner Focus","Ice Body","Moody"],
+  "Torterra":["Overgrow","Shell Armor"],"Infernape":["Blaze","Iron Fist"],"Empoleon":["Torrent","Defiant"],
+  "Luxray":["Rivalry","Intimidate","Guts"],"Roserade":["Natural Cure","Poison Point","Technician"],
+  "Rampardos":["Mold Breaker","Sheer Force"],"Bastiodon":["Sturdy","Soundproof"],"Lopunny":["Cute Charm","Klutz","Limber"],
+  "Spiritomb":["Pressure","Infiltrator"],"Garchomp":["Sand Veil","Rough Skin"],"Lucario":["Steadfast","Inner Focus","Justified"],
+  "Hippowdon":["Sand Stream","Sand Force"],"Toxicroak":["Anticipation","Dry Skin","Poison Touch"],
+  "Abomasnow":["Snow Warning","Soundproof"],"Weavile":["Pressure","Pickpocket"],"Rhyperior":["Lightning Rod","Solid Rock","Reckless"],
+  "Leafeon":["Leaf Guard","Chlorophyll"],"Glaceon":["Snow Cloak","Ice Body"],"Gliscor":["Hyper Cutter","Sand Veil","Poison Heal"],
+  "Mamoswine":["Oblivious","Snow Cloak","Thick Fat"],"Gallade":["Steadfast","Sharpness","Justified"],
+  "Froslass":["Snow Cloak","Cursed Body"],"Rotom":["Levitate"],"Serperior":["Overgrow","Contrary"],
+  "Emboar":["Blaze","Reckless"],"Samurott":["Torrent","Shell Armor"],"Watchog":["Illuminate","Keen Eye","Analytic"],
+  "Liepard":["Limber","Unburden","Prankster"],"Simisage":["Gluttony","Overgrow"],"Simisear":["Gluttony","Blaze"],
+  "Simipour":["Gluttony","Torrent"],"Excadrill":["Sand Rush","Sand Force","Mold Breaker"],"Audino":["Healer","Regenerator","Klutz"],
+  "Conkeldurr":["Guts","Sheer Force","Iron Fist"],"Whimsicott":["Prankster","Infiltrator","Chlorophyll"],
+  "Krookodile":["Intimidate","Moxie","Anger Point"],"Cofagrigus":["Mummy"],"Garbodor":["Stench","Weak Armor","Aftermath"],
+  "Zoroark":["Illusion"],"Reuniclus":["Overcoat","Magic Guard","Regenerator"],"Vanilluxe":["Ice Body","Snow Warning","Weak Armor"],
+  "Emolga":["Static","Motor Drive"],"Chandelure":["Flash Fire","Flame Body","Shadow Tag"],"Beartic":["Snow Cloak","Slush Rush","Swift Swim"],
+  "Stunfisk":["Static","Limber","Sand Veil"],"Golurk":["Iron Fist","Klutz","No Guard"],"Hydreigon":["Levitate"],
+  "Volcarona":["Flame Body","Swarm"],"Chesnaught":["Overgrow","Bulletproof"],"Delphox":["Blaze","Magician"],
+  "Greninja":["Torrent","Protean","Battle Bond"],"Diggersby":["Pickup","Cheek Pouch","Huge Power"],
+  "Talonflame":["Flame Body","Gale Wings"],"Vivillon":["Shield Dust","Compound Eyes","Friend Guard"],
+  "Floette":["Flower Veil","Symbiosis"],"Florges":["Flower Veil","Symbiosis"],"Pangoro":["Iron Fist","Mold Breaker","Scrappy"],
+  "Furfrou":["Fur Coat"],"Meowstic":["Keen Eye","Infiltrator","Competitive","Prankster"],"Aegislash":["Stance Change"],
+  "Aromatisse":["Healer","Aroma Veil"],"Slurpuff":["Sweet Veil","Unburden"],"Clawitzer":["Mega Launcher"],
+  "Heliolisk":["Dry Skin","Sand Veil","Solar Power"],"Tyrantrum":["Strong Jaw","Rock Head"],"Aurorus":["Refrigerate","Snow Warning"],
+  "Sylveon":["Cute Charm","Pixilate"],"Hawlucha":["Limber","Unburden","Mold Breaker"],"Dedenne":["Cheek Pouch","Pickup","Plus"],
+  "Goodra":["Sap Sipper","Hydration","Gooey"],"Klefki":["Prankster","Magician"],"Trevenant":["Natural Cure","Frisk","Harvest"],
+  "Gourgeist":["Pickup","Frisk","Insomnia"],"Avalugg":["Own Tempo","Ice Body","Sturdy"],"Noivern":["Frisk","Infiltrator","Telepathy"],
+  "Decidueye":["Overgrow","Long Reach"],"Incineroar":["Blaze","Intimidate"],"Primarina":["Torrent","Liquid Voice"],
+  "Toucannon":["Keen Eye","Skill Link","Sheer Force"],"Crabominable":["Hyper Cutter","Iron Fist","Anger Point"],
+  "Lycanroc":["Keen Eye","Sand Rush","Steadfast","Tough Claws","No Guard"],"Toxapex":["Merciless","Limber","Regenerator"],
+  "Mudsdale":["Own Tempo","Stamina","Inner Focus"],"Araquanid":["Water Bubble","Water Absorb"],
+  "Salazzle":["Corrosion","Oblivious"],"Tsareena":["Leaf Guard","Queenly Majesty","Sweet Veil"],
+  "Oranguru":["Inner Focus","Telepathy","Symbiosis"],"Passimian":["Receiver","Defiant"],"Mimikyu":["Disguise"],
+  "Drampa":["Berserk","Sap Sipper","Cloud Nine"],"Kommo-o":["Bulletproof","Soundproof","Overcoat"],
+  "Corviknight":["Pressure","Unnerve","Mirror Armor"],"Flapple":["Ripen","Gluttony","Hustle"],
+  "Appletun":["Ripen","Gluttony","Thick Fat"],"Sandaconda":["Sand Spit","Shed Skin","Sand Veil"],
+  "Polteageist":["Weak Armor","Cursed Body"],"Hatterene":["Healer","Anticipation","Magic Bounce"],
+  "Mr. Rime":["Tangled Feet","Screen Cleaner","Ice Body"],"Runerigus":["Wandering Spirit"],
+  "Alcremie":["Sweet Veil","Aroma Veil"],"Morpeko":["Hunger Switch"],"Dragapult":["Clear Body","Infiltrator","Cursed Body"],
+  "Wyrdeer":["Intimidate","Frisk","Sap Sipper"],"Kleavor":["Swarm","Sheer Force","Steadfast"],
+  "Basculegion":["Swift Swim","Adaptability","Mold Breaker"],"Sneasler":["Pressure","Unburden","Poison Touch"],
+  "Meowscarada":["Overgrow","Protean"],"Skeledirge":["Blaze","Unaware"],"Quaquaval":["Torrent","Moxie"],
+  "Maushold":["Friend Guard","Technician","Cheek Pouch"],"Garganacl":["Purifying Salt","Sturdy","Clear Body"],
+  "Armarouge":["Flash Fire","Weak Armor"],"Ceruledge":["Flash Fire","Weak Armor"],"Bellibolt":["Electromorphosis","Static","Damp"],
+  "Scovillain":["Chlorophyll","Insomnia","Moody"],"Espathra":["Opportunist","Frisk","Speed Boost"],
+  "Tinkaton":["Mold Breaker","Own Tempo","Pickpocket"],"Palafin":["Zero to Hero"],
+  "Orthworm":["Earth Eater","Sand Veil"],"Glimmora":["Toxic Debris","Corrosion"],
+  "Farigiraf":["Cud Chew","Armor Tail","Sap Sipper"],"Kingambit":["Defiant","Supreme Overlord","Pressure"],
+  "Sinistcha":["Hospitality","Heatproof"],"Archaludon":["Stamina","Sturdy","Electromorphosis"],
+  "Hydrapple":["Supersweet Syrup","Regenerator","Sticky Hold"],"Galarian Slowbro":["Quickdraw","Own Tempo","Regenerator"],
+  "Indeedee":["Inner Focus","Synchronize","Psychic Surge"],"Blissey":["Natural Cure","Serene Grace","Healer"],
+  "Metagross":["Clear Body","Light Metal"],"Mismagius":["Levitate"],"Zapdos":["Pressure","Static"],
+  "Zeraora":["Volt Absorb"],"Regieleki":["Transistor"],"Iron Bundle":["Quark Drive"],
+  "Landorus":["Sand Force","Sheer Force"],"Breloom":["Effect Spore","Poison Heal","Technician"],
+  "Bronzong":["Levitate","Heatproof","Heavy Metal"],"Ferrothorn":["Iron Barbs","Anticipation"],
+  "Flygon":["Levitate"],"Gastrodon":["Sticky Hold","Storm Drain","Sand Force"],
+  "Grimmsnarl":["Prankster","Frisk","Pickpocket"],"Kingdra":["Swift Swim","Sniper","Damp"],
+  "Latias":["Levitate"],"Ludicolo":["Swift Swim","Rain Dish","Own Tempo"],
+  "Ninetales-A":["Snow Cloak","Snow Warning"],"Raichu-A":["Surge Surfer"],
+  "Rotom-H":["Levitate"],"Rotom-W":["Levitate"],"Salamence":["Intimidate","Moxie"],
+  "Togekiss":["Hustle","Serene Grace","Super Luck"],"Urshifu":["Unseen Fist"],
+  "Tapu Koko":["Electric Surge","Telepathy"],"Tapu Lele":["Psychic Surge","Telepathy"],
+  "Mismagius":["Levitate"],"Blissey":["Natural Cure","Serene Grace","Healer"],
+  "Whimsicott":["Prankster","Infiltrator","Chlorophyll"],"Tsareena":["Leaf Guard","Queenly Majesty","Sweet Veil"],
+};
+
+// ABILITY DATABASE
+var ABILITY_DB={
+// Lead-boosting abilities
+"Intimidate":{lead:3,note:"Drops opponent Attack on entry"},
+"Prankster":{lead:3,note:"Status moves go first"},
+"Speed Boost":{lead:2,note:"Speed rises each turn"},
+"Drought":{lead:2,note:"Sets sun on entry"},
+"Drizzle":{lead:2,note:"Sets rain on entry"},
+"Sand Stream":{lead:2,note:"Sets sandstorm on entry"},
+"Snow Warning":{lead:2,note:"Sets hail on entry"},
+"Electric Surge":{lead:2,note:"Sets Electric Terrain on entry"},
+"Psychic Surge":{lead:2,note:"Sets Psychic Terrain on entry"},
+"Grassy Surge":{lead:2,note:"Sets Grassy Terrain on entry"},
+"Misty Surge":{lead:2,note:"Sets Misty Terrain on entry"},
+"Compound Eyes":{lead:1,note:"Boosts move accuracy"},
+"No Guard":{lead:1,note:"All moves always hit"},
+// Back/pivot boosting abilities
+"Regenerator":{lead:-2,bulk:2,note:"Recovers HP on switch"},
+"Natural Cure":{lead:-1,bulk:1,note:"Heals status on switch"},
+"Volt Absorb":{lead:0,bulk:1,note:"Immune to Electric"},
+"Water Absorb":{lead:0,bulk:1,note:"Immune to Water"},
+"Flash Fire":{lead:0,bulk:1,note:"Immune to Fire"},
+"Levitate":{lead:0,bulk:1,note:"Immune to Ground"},
+// Durability abilities
+"Magic Guard":{lead:0,bulk:3,note:"No indirect damage"},
+"Multiscale":{lead:0,bulk:3,note:"Half damage at full HP"},
+"Thick Fat":{lead:0,bulk:2,note:"Halves Fire/Ice damage"},
+"Sturdy":{lead:0,bulk:2,note:"Survives one hit from full HP"},
+"Marvel Scale":{lead:0,bulk:1,note:"Defense boost when statused"},
+"Fur Coat":{lead:0,bulk:2,note:"Doubles Defense"},
+// Coverage-affecting abilities
+"Protean":{lead:1,coverage:true,note:"Gains STAB on every move"},
+"Libero":{lead:1,coverage:true,note:"Gains STAB on every move"},
+"Adaptability":{lead:0,coverage:true,note:"STAB moves deal 2x instead of 1.5x"},
+"Tough Claws":{lead:0,coverage:true,note:"Contact moves boosted 30%"},
+"Sheer Force":{lead:0,coverage:true,note:"Extra effect moves hit harder"},
+"Technician":{lead:0,coverage:true,note:"Weak moves boosted 50%"},
+"Huge Power":{lead:0,coverage:true,note:"Attack doubled"},
+"Pure Power":{lead:0,coverage:true,note:"Attack doubled"},
+"Contrary":{lead:0,coverage:true,note:"Stat drops become boosts"},
+// Other notable
+"Competitive":{lead:1,note:"Sp.Atk +2 when stat dropped"},
+"Defiant":{lead:1,note:"Attack +2 when stat dropped"},
+"Guts":{lead:0,note:"Attack boost when statused"},
+"Hustle":{lead:0,note:"Attack boosted, accuracy reduced"},
+"Inner Focus":{lead:1,note:"Cannot flinch"},
+"Clear Body":{lead:1,note:"Stats cannot be lowered"},
+"White Smoke":{lead:1,note:"Stats cannot be lowered"},
+"Unburden":{lead:2,note:"Speed doubles after item consumed"},
+"Dancer":{lead:0,note:"Copies dance moves"},
+"Trace":{lead:0,note:"Copies opponent ability"},
+"Skill Link":{lead:0,note:"Multi-hit moves always hit max times"},
+"Sniper":{lead:0,note:"Critical hits deal more damage"},
+"Super Luck":{lead:0,note:"Higher critical hit rate"},
+"Pressure":{lead:0,note:"Drains opponent PP faster"},
+"Blaze":{lead:0,note:"Fire moves boosted at low HP"},
+"Torrent":{lead:0,note:"Water moves boosted at low HP"},
+"Overgrow":{lead:0,note:"Grass moves boosted at low HP"},
+"Swarm":{lead:0,note:"Bug moves boosted at low HP"},
+"Steadfast":{lead:0,note:"Speed +1 when flinched"},
+"Own Tempo":{lead:0,note:"Cannot be confused"},
+"Limber":{lead:0,note:"Cannot be paralyzed"},
+"Immunity":{lead:0,note:"Cannot be poisoned"},
+"Insomnia":{lead:0,note:"Cannot fall asleep"},
+"Vital Spirit":{lead:0,note:"Cannot fall asleep"},
+"Oblivious":{lead:0,note:"Cannot be infatuated or Taunted"},
+"Soundproof":{lead:0,note:"Immune to sound moves"},
+"Storm Drain":{lead:0,bulk:1,note:"Redirects Water moves, Sp.Atk +1"},
+"Lightning Rod":{lead:0,bulk:1,note:"Redirects Electric moves, Sp.Atk +1"},
+"Sap Sipper":{lead:0,bulk:1,note:"Immune to Grass, Attack +1"},
+"Motor Drive":{lead:0,bulk:1,note:"Immune to Electric, Speed +1"},
+"Heatproof":{lead:0,bulk:1,note:"Halves Fire damage"},
+"Dry Skin":{lead:0,bulk:1,note:"Heals in rain, weak to sun"},
+"Ice Body":{lead:0,bulk:1,note:"Heals in hail"},
+"Rain Dish":{lead:0,bulk:1,note:"Heals in rain"},
+"Sand Force":{lead:0,note:"Rock/Ground/Steel boosted in sand"},
+"Sand Rush":{lead:1,note:"Speed doubled in sand"},
+"Swift Swim":{lead:1,note:"Speed doubled in rain"},
+"Chlorophyll":{lead:1,note:"Speed doubled in sun"},
+"Slush Rush":{lead:1,note:"Speed doubled in hail"},
+"Surge Surfer":{lead:1,note:"Speed doubled in Electric Terrain"},
+"Hospitality":{lead:1,note:"Heals ally on entry"},
+"Opportunist":{lead:0,note:"Copies opponent stat boosts"},
+"Anger Point":{lead:0,note:"Max Attack on critical hit"},
+"Moxie":{lead:0,note:"Attack +1 on KO"},
+"Beast Boost":{lead:0,note:"Highest stat +1 on KO"},
+"Soul-Heart":{lead:0,note:"Sp.Atk +1 when any mon faints"},
+"Grim Neigh":{lead:0,note:"Sp.Atk +1 on KO"},
+"Chilling Neigh":{lead:0,note:"Attack +1 on KO"},
+"Supreme Overlord":{lead:0,note:"Power up per fainted ally"},
+"Unaware":{lead:0,note:"Ignores opponent stat changes"},
+"Magic Bounce":{lead:1,note:"Reflects status moves back"},
+"Neutralizing Gas":{lead:2,note:"Suppresses all abilities on field"},
+"Corrosion":{lead:0,note:"Can poison Steel/Poison types"},
+"Parental Bond":{lead:0,coverage:true,note:"Moves hit twice"},
+"Triage":{lead:0,note:"Healing moves get +3 priority"},
+"Queenly Majesty":{lead:1,note:"Blocks priority moves"},
+"Dazzling":{lead:1,note:"Blocks priority moves"},
+"Armor Tail":{lead:1,note:"Blocks priority moves"},
+};
+
+// MEGA STONE DATABASE — Complete Champions roster (59 Mega Evolutions)
+var MEGA_STONES={
+  // CLASSIC MEGAS
+  "Venusaurite":   {mon:"Venusaur",   ability:"Thick Fat",     lead:0, bulk:2, coverage:false, note:"Mega: Thick Fat — halves Fire/Ice damage."},
+  "Charizardite X":{mon:"Charizard",  ability:"Tough Claws",   lead:2, bulk:0, coverage:true,  note:"Mega: Tough Claws — contact moves boosted 30%. Dragon typing."},
+  "Charizardite Y":{mon:"Charizard",  ability:"Drought",       lead:2, bulk:0, coverage:true,  note:"Mega: Drought — sets harsh sun. Fire moves boosted."},
+  "Blastoisinite": {mon:"Blastoise",  ability:"Mega Launcher", lead:1, bulk:1, coverage:true,  note:"Mega: Mega Launcher — pulse moves boosted 50%."},
+  "Beedrillite":   {mon:"Beedrill",   ability:"Adaptability",  lead:2, bulk:0, coverage:true,  note:"Mega: Adaptability — STAB moves deal 2x damage."},
+  "Pidgeotite":    {mon:"Pidgeot",    ability:"No Guard",      lead:2, bulk:0, coverage:true,  note:"Mega: No Guard — all moves always hit."},
+  "Alakazite":     {mon:"Alakazam",   ability:"Trace",         lead:2, bulk:0, coverage:true,  note:"Mega: Trace — copies opponent ability. Huge Speed."},
+  "Slowbronite":   {mon:"Slowbro",    ability:"Shell Armor",   lead:0, bulk:2, coverage:false, note:"Mega: Shell Armor — prevents critical hits."},
+  "Gengarite":     {mon:"Gengar",     ability:"Shadow Tag",    lead:2, bulk:0, coverage:true,  note:"Mega: Shadow Tag — opponent cannot switch out."},
+  "Kangaskhanite": {mon:"Kangaskhan", ability:"Parental Bond", lead:2, bulk:0, coverage:true,  note:"Mega: Parental Bond — moves hit twice."},
+  "Pinsirite":     {mon:"Pinsir",     ability:"Aerilate",      lead:2, bulk:0, coverage:true,  note:"Mega: Aerilate — Normal moves become Flying type."},
+  "Gyaradosite":   {mon:"Gyarados",   ability:"Mold Breaker",  lead:2, bulk:0, coverage:true,  note:"Mega: Mold Breaker — ignores opponent abilities."},
+  "Aerodactylite": {mon:"Aerodactyl", ability:"Tough Claws",   lead:2, bulk:0, coverage:true,  note:"Mega: Tough Claws — contact moves boosted 30%."},
+  "Ampharosite":   {mon:"Ampharos",   ability:"Mold Breaker",  lead:1, bulk:1, coverage:true,  note:"Mega: Mold Breaker — ignores opponent abilities."},
+  "Steelixite":    {mon:"Steelix",    ability:"Sand Force",    lead:0, bulk:3, coverage:false, note:"Mega: Sand Force — Rock/Ground/Steel boosted in sand."},
+  "Scizorite":     {mon:"Scizor",     ability:"Technician",    lead:1, bulk:0, coverage:true,  note:"Mega: Technician — weak moves boosted 50%."},
+  "Heracronite":   {mon:"Heracross",  ability:"Skill Link",    lead:1, bulk:0, coverage:true,  note:"Mega: Skill Link — multi-hit moves always hit max times."},
+  "Houndoominite": {mon:"Houndoom",   ability:"Solar Power",   lead:1, bulk:0, coverage:true,  note:"Mega: Solar Power — Sp.Atk boosted in sun."},
+  "Tyranitarite":  {mon:"Tyranitar",  ability:"Sand Stream",   lead:2, bulk:1, coverage:false, note:"Mega: Sand Stream — sets sandstorm on entry."},
+  "Sceptilite":    {mon:"Sceptile",   ability:"Lightning Rod", lead:1, bulk:0, coverage:true,  note:"Mega: Lightning Rod — draws Electric moves, Sp.Atk +1."},
+  "Blazikenite":   {mon:"Blaziken",   ability:"Speed Boost",   lead:2, bulk:0, coverage:true,  note:"Mega: Speed Boost — Speed rises each turn."},
+  "Swampertite":   {mon:"Swampert",   ability:"Swift Swim",    lead:1, bulk:0, coverage:true,  note:"Mega: Swift Swim — Speed doubled in rain."},
+  "Gardevoirite":  {mon:"Gardevoir",  ability:"Pixilate",      lead:1, bulk:0, coverage:true,  note:"Mega: Pixilate — Normal moves become Fairy type."},
+  "Sableyite":     {mon:"Sableye",    ability:"Magic Bounce",  lead:2, bulk:1, coverage:false, note:"Mega: Magic Bounce — reflects status moves."},
+  "Mawilite":      {mon:"Mawile",     ability:"Huge Power",    lead:1, bulk:0, coverage:true,  note:"Mega: Huge Power — Attack doubled."},
+  "Aggronite":     {mon:"Aggron",     ability:"Filter",        lead:0, bulk:3, coverage:false, note:"Mega: Filter — reduces super effective damage."},
+  "Medichamite":   {mon:"Medicham",   ability:"Pure Power",    lead:1, bulk:0, coverage:true,  note:"Mega: Pure Power — Attack doubled."},
+  "Manectite":     {mon:"Manectric",  ability:"Intimidate",    lead:3, bulk:0, coverage:false, note:"Mega: Intimidate — drops opponent Attack on entry."},
+  "Sharpedonite":  {mon:"Sharpedo",   ability:"Strong Jaw",    lead:2, bulk:0, coverage:true,  note:"Mega: Strong Jaw — biting moves boosted 50%."},
+  "Cameruptite":   {mon:"Camerupt",   ability:"Sheer Force",   lead:0, bulk:1, coverage:true,  note:"Mega: Sheer Force — extra effect moves hit harder."},
+  "Altariaite":    {mon:"Altaria",    ability:"Pixilate",      lead:1, bulk:1, coverage:true,  note:"Mega: Pixilate — Normal moves become Fairy type."},
+  "Banetteite":    {mon:"Banette",    ability:"Prankster",     lead:3, bulk:0, coverage:false, note:"Mega: Prankster — status moves go first."},
+  "Absolite":      {mon:"Absol",      ability:"Magic Bounce",  lead:2, bulk:0, coverage:false, note:"Mega: Magic Bounce — reflects status moves."},
+  "Glalieite":     {mon:"Glalie",     ability:"Refrigerate",   lead:1, bulk:0, coverage:true,  note:"Mega: Refrigerate — Normal moves become Ice type."},
+  "Salamencite":   {mon:"Salamence",  ability:"Aerilate",      lead:2, bulk:0, coverage:true,  note:"Mega: Aerilate — Normal moves become Flying type."},
+  "Metagrossite":  {mon:"Metagross",  ability:"Tough Claws",   lead:2, bulk:0, coverage:true,  note:"Mega: Tough Claws — contact moves boosted 30%."},
+  "Lopunnite":     {mon:"Lopunny",    ability:"Scrappy",       lead:3, bulk:0, coverage:true,  note:"Mega: Scrappy — Fake Out hits Ghost types. Fast lead."},
+  "Garchompite":   {mon:"Garchomp",   ability:"Sand Force",    lead:2, bulk:0, coverage:true,  note:"Mega: Sand Force — Ground/Rock/Steel boosted in sand."},
+  "Lucarionite":   {mon:"Lucario",    ability:"Adaptability",  lead:2, bulk:0, coverage:true,  note:"Mega: Adaptability — STAB moves deal 2x damage."},
+  "Galladite":     {mon:"Gallade",    ability:"Inner Focus",   lead:2, bulk:0, coverage:true,  note:"Mega: Inner Focus — cannot flinch. Attack + Speed boost."},
+  "Audinite":      {mon:"Audino",     ability:"Healer",        lead:0, bulk:3, coverage:false, note:"Mega: Healer — may heal ally status conditions."},
+  // NEW CHAMPIONS MEGAS (from Z-A)
+  "Clefablite":    {mon:"Clefable",   ability:"Magic Bounce",  lead:2, bulk:1, coverage:false, note:"Mega: Magic Bounce — reflects status moves."},
+  "Victreebelite": {mon:"Victreebel", ability:"Innards Out",   lead:1, bulk:0, coverage:true,  note:"Mega: Innards Out — deals damage equal to remaining HP when KO'd."},
+  "Starminite":    {mon:"Starmie",    ability:"Huge Power",    lead:2, bulk:0, coverage:true,  note:"Mega: Huge Power — Attack doubled. Physical sweeper."},
+  "Dragonitite":   {mon:"Dragonite",  ability:"Multiscale",    lead:1, bulk:2, coverage:false, note:"Mega: Multiscale — half damage at full HP."},
+  "Meganiumite":   {mon:"Meganium",   ability:"Mega Sol",      lead:2, bulk:0, coverage:true,  note:"Mega: Mega Sol — weather moves act as if in harsh sun."},
+  "Feraligatrite": {mon:"Feraligatr", ability:"Dragonize",     lead:2, bulk:0, coverage:true,  note:"Mega: Dragonize — Normal moves become Dragon type."},
+  "Skarmoryite":   {mon:"Skarmory",   ability:"Stalwart",      lead:1, bulk:2, coverage:false, note:"Mega: Stalwart — ignores redirection moves."},
+  "Chimechoite":   {mon:"Chimecho",   ability:"Levitate",      lead:0, bulk:2, coverage:false, note:"Mega: Levitate — immune to Ground moves. Bulk boost."},
+  "Froslassite":   {mon:"Froslass",   ability:"Snow Warning",  lead:2, bulk:0, coverage:false, note:"Mega: Snow Warning — sets hail on entry."},
+  "Emboarite":     {mon:"Emboar",     ability:"Mold Breaker",  lead:1, bulk:0, coverage:true,  note:"Mega: Mold Breaker — ignores opponent abilities."},
+  "Excadrillite":  {mon:"Excadrill",  ability:"Piercing Drill",lead:1, bulk:0, coverage:true,  note:"Mega: Piercing Drill — contact moves deal 25% through Protect."},
+  "Chandelureite": {mon:"Chandelure", ability:"Infiltrator",   lead:1, bulk:0, coverage:true,  note:"Mega: Infiltrator — moves bypass Light Screen/Reflect."},
+  "Golurknite":    {mon:"Golurk",     ability:"Unseen Fist",   lead:1, bulk:0, coverage:true,  note:"Mega: Unseen Fist — contact moves bypass protection."},
+  "Chesnaughtite": {mon:"Chesnaught", ability:"Bulletproof",   lead:0, bulk:2, coverage:false, note:"Mega: Bulletproof — immune to ball and bomb moves."},
+  "Delphoxite":    {mon:"Delphox",    ability:"Levitate",      lead:2, bulk:0, coverage:true,  note:"Mega: Levitate — immune to Ground moves. Speed boost."},
+  "Greninjaite":   {mon:"Greninja",   ability:"Protean",       lead:2, bulk:0, coverage:true,  note:"Mega: Protean — gains STAB on every move used."},
+  "Floettite":     {mon:"Floette",    ability:"Fairy Aura",    lead:1, bulk:0, coverage:true,  note:"Mega: Fairy Aura — boosts all Fairy moves on the field."},
+  "Meowsticite":   {mon:"Meowstic",   ability:"Trace",         lead:2, bulk:0, coverage:false, note:"Mega: Trace — copies opponent ability on entry."},
+  "Hawluchite":    {mon:"Hawlucha",   ability:"No Guard",      lead:2, bulk:0, coverage:true,  note:"Mega: No Guard — all moves always hit."},
+  "Crabominablite":{mon:"Crabominable",ability:"Iron Fist",    lead:1, bulk:0, coverage:true,  note:"Mega: Iron Fist — punching moves boosted 20%."},
+  "Drampite":      {mon:"Drampa",     ability:"Berserk",       lead:0, bulk:0, coverage:true,  note:"Mega: Berserk — Sp.Atk +1 when HP drops below half."},
+  "Scovillanite":  {mon:"Scovillain", ability:"Spicy Spray",   lead:1, bulk:0, coverage:false, note:"Mega: Spicy Spray — burns opponents that make contact."},
+  "Glimmorite":    {mon:"Glimmora",   ability:"Adaptability",  lead:1, bulk:0, coverage:true,  note:"Mega: Adaptability — STAB moves deal 2x damage."},
+};
+
+// Which mons can Mega Evolve — for item slot filtering
+var MEGA_MON_TO_STONE={};
+Object.keys(MEGA_STONES).forEach(function(stone){
+  var mon=MEGA_STONES[stone].mon;
+  if(!MEGA_MON_TO_STONE[mon])MEGA_MON_TO_STONE[mon]=[];
+  MEGA_MON_TO_STONE[mon].push(stone);
+});
+
+function getLeadScore(mon){
+  var score=0;
+  var reasons=[];
+  var moves=(mon.moves||[]).filter(Boolean);
+  moves.forEach(function(mv){
+    if(LEAD_MOVES[mv]){score+=LEAD_MOVES[mv];reasons.push(mv);}
+    if(BACK_MOVES[mv]){score-=BACK_MOVES[mv];}
+  });
+  if(FAST_POKEMON.indexOf(mon.name)>-1){score+=2;reasons.push("Fast");}
+  if(SLOW_SETUP.indexOf(mon.name)>-1){score-=2;}
+  // Ability signals
+  if(mon.ability&&ABILITY_DB[mon.ability]){
+    var ab=ABILITY_DB[mon.ability];
+    score+=ab.lead||0;
+    if(ab.lead>0)reasons.push(mon.ability);
+    if((ab.bulk||0)>=2)score-=1;
+  }
+  // Mega Stone signals
+  if(mon.item&&MEGA_STONES[mon.item]){
+    var ms=MEGA_STONES[mon.item];
+    score+=ms.lead||0;
+    if((ms.lead||0)>0)reasons.push("Mega");
+  }
+  // Legacy species Intimidate check for backwards compat
+  if(!mon.ability&&INTIMIDATE_USERS.indexOf(mon.name)>-1){score+=2;reasons.push("Intimidate");}
+  return{score:score,reasons:reasons};
+}
+
+function getLeadRole(score){
+  if(score>=2)return{label:"LEAD",color:"#c8ff00",icon:"⚡"};
+  if(score<=-1)return{label:"BACK",color:"#a78bfa",icon:"🛡"};
+  return{label:"FLEX",color:"#00d4ff",icon:"↕"};
+}
+
+// TEMPO PROFILE ENGINE
+// Species-level tempo signals for enemy team analysis
+var STALL_MONS=["Snorlax","Blissey","Toxapex","Slowbro","Slowking","Galarian Slowbro","Ferrothorn","Hippowdon","Gastrodon","Milotic","Sylveon","Clefable","Garganacl","Orthworm","Avalugg","Bastiodon","Steelix","Cofagrigus","Audino","Spiritomb","Umbreon","Florges","Aromatisse"];
+var REDIRECT_MONS=["Clefable","Togekiss","Indeedee","Whimsicott","Amoonguss","Tsareena","Oranguru","Aromatisse","Florges","Alcremie","Sylveon","Grimmsnarl"];
+var SPEED_CONTROL_MONS=["Torkoal","Politoed","Pelipper","Ninetales","Ninetales-A","Bronzong","Cofagrigus","Reuniclus","Hatterene","Oranguru","Mr. Rime","Runerigus","Ditto","Mudsdale","Hippowdon","Garganacl"];
+var SETUP_MONS=["Grimmsnarl","Klefki","Whimsicott","Indeedee","Oranguru","Togekiss","Alcremie","Blissey","Audino","Aromatisse"];
+var FAKE_OUT_MONS=["Incineroar","Lopunny","Kangaskhan","Ambipom","Mienshao","Passimian","Toucannon","Maushold","Meowscarada"];
+
+// Tempo move signals on enemy moves — but enemy mons won't have moves, so use species only
+var STALL_MOVES_SIG=["Protect","Toxic","Recover","Slack Off","Rest","Wish","Roost","Synthesis","Shore Up"];
+var REDIRECT_MOVES_SIG=["Follow Me","Rage Powder","Ally Switch"];
+var SPEED_MOVES_SIG=["Trick Room","Tailwind","Icy Wind","Electroweb","Thunder Wave","Scary Face"];
+var SETUP_MOVES_SIG=["Helping Hand","Reflect","Light Screen","Aurora Veil","Coaching"];
+var FAKOUT_MOVES_SIG=["Fake Out"];
+
+function getTempoProfile(enemies){
+  var stall=0, redirect=0, speed=0, setup=0, fakeout=0;
+
+  enemies.forEach(function(enemy){
+    // Species signals
+    if(STALL_MONS.indexOf(enemy.name)>-1) stall+=2;
+    if(REDIRECT_MONS.indexOf(enemy.name)>-1) redirect+=2;
+    if(SPEED_CONTROL_MONS.indexOf(enemy.name)>-1) speed+=2;
+    if(SETUP_MONS.indexOf(enemy.name)>-1) setup+=1;
+    if(FAKE_OUT_MONS.indexOf(enemy.name)>-1) fakeout+=3;
+
+    // Bulky types signal stall potential
+    var bulkyTypes=["Normal","Steel","Rock","Fairy"];
+    bulkyTypes.forEach(function(t){if(enemy.types.indexOf(t)>-1) stall+=0.5;});
+  });
+
+  // Normalize to Low/Med/High (0-2 = Low, 3-4 = Med, 5+ = High)
+  function rate(n){return n>=5?"High":n>=3?"Medium":"Low";}
+  function rateColor(n){return n>=5?"#ff4060":n>=3?"#f3d23b":"#63bb5b";}
+  function rateNum(n){return n>=5?3:n>=3?2:1;} // 1=low 2=med 3=high
+
+  return{
+    stall:{label:rate(stall),color:rateColor(stall),num:rateNum(stall)},
+    redirect:{label:rate(redirect),color:rateColor(redirect),num:rateNum(redirect)},
+    speed:{label:rate(speed),color:rateColor(speed),num:rateNum(speed)},
+    setup:{label:rate(setup),color:rateColor(setup),num:rateNum(setup)},
+    fakeout:{label:rate(fakeout),color:rateColor(fakeout),num:rateNum(fakeout)},
+    overall: Math.max(rateNum(stall),rateNum(redirect),rateNum(speed),rateNum(fakeout))
+  };
+}
+
+// Get tempo annotation for a pick card
+function getTempoAnnotation(mon, tempoProfile){
+  var annotations=[];
+  var isFragile=FAST_POKEMON.indexOf(mon.name)>-1&&SLOW_SETUP.indexOf(mon.name)<0;
+  var isBulky=SLOW_SETUP.indexOf(mon.name)>-1;
+
+  if(tempoProfile.stall.num>=2&&isFragile){
+    annotations.push({text:"Fragile into stall-heavy teams",icon:"⚠",color:"#f3d23b"});
+  }
+  if(tempoProfile.stall.num>=2&&isBulky){
+    annotations.push({text:"Tolerates dead turns",icon:"🛡",color:"#63bb5b"});
+  }
+  if(tempoProfile.fakeout.num>=3&&isFragile){
+    annotations.push({text:"Fake Out risk on lead",icon:"⚡",color:"#ff4060"});
+  }
+  if(tempoProfile.speed.num>=2&&isFragile){
+    annotations.push({text:"Speed control may neutralize",icon:"⚠",color:"#f3d23b"});
+  }
+  if(tempoProfile.redirect.num>=2){
+    annotations.push({text:"Redirects may block your coverage",icon:"↩",color:"#f3d23b"});
+  }
+  return annotations;
+}
+
+// ANALYSIS
+function analyze(){
+  var myTeam=savedTeams[selectedTeamIdx];
+  var allMons=myTeam.mons.filter(Boolean);
+  var myMons=[];
+  var excluded=[];
+  allMons.forEach(function(mon){
+    var hasAbility=!!mon.ability;
+    var hasMoves=(mon.moves||[]).filter(Boolean).length>0;
+    if(hasAbility&&hasMoves){myMons.push(mon);}
+    else{excluded.push({name:mon.name,missing:(!hasAbility?"ability":"")+(!hasAbility&&!hasMoves?" + ":"")+(!hasMoves?"moves":"")});}
+  });
+  var enemies=enemyTeam.filter(Boolean);
+  if(!myMons.length||!enemies.length)return;
+
+  // Compute tempo profile early so it can influence annotations
+  var tempo=getTempoProfile(enemies);
+
+  var scored=myMons.map(function(mon){
+    var totalScore=0;
+    var superHits=[];
+    var vulnTo=[];
+    var ab=mon.ability?ABILITY_DB[mon.ability]:null;
+    var ms=mon.item?MEGA_STONES[mon.item]:null;
+    var hasProtean=(mon.ability==="Protean"||mon.ability==="Libero")||(ms&&(ms.ability==="Protean"||ms.ability==="Libero"));
+    var hasAdapt=(mon.ability==="Adaptability")||(ms&&ms.ability==="Adaptability");
+    var hasHugePower=(mon.ability==="Huge Power"||mon.ability==="Pure Power")||(ms&&(ms.ability==="Huge Power"||ms.ability==="Pure Power"));
+
+    enemies.forEach(function(enemy){
+      var moves=(mon.moves||[]).filter(Boolean);
+      var bestMult=0;
+      var bestMove=null;
+      moves.forEach(function(mv){
+        var md=MV[mv];
+        if(!md||md.c==="O")return;
+        var mult=eff(md.t,enemy.types);
+        // Protean/Libero: always gets STAB so treat as 1.5x boost if not already super effective
+        if(hasProtean&&mult===1)mult=1.5;
+        if(hasAdapt&&mon.types.indexOf(md.t)>-1)mult*=1.33;
+        if(hasHugePower&&md.c==="P")mult*=1.25;
+        if(mult>bestMult){bestMult=mult;bestMove=mv;}
+      });
+      if(bestMult<1){
+        mon.types.forEach(function(tp){
+          var mult=eff(tp,enemy.types);
+          if(mult>bestMult){bestMult=mult;bestMove="["+tp+"-type]";}
+        });
+      }
+      totalScore+=bestMult;
+      if(bestMult>=2)superHits.push({enemy:enemy.name,move:bestMove,mult:bestMult});
+      var inBest=0;
+      enemy.types.forEach(function(et){var m=eff(et,mon.types);if(m>inBest)inBest=m;});
+      // Abilities that reduce incoming damage
+      if(ab){
+        if(ab.bulk>=3)inBest=inBest*0.5; // Magic Guard / Multiscale
+        else if(ab.bulk>=2)inBest=inBest*0.75; // Thick Fat etc
+      }
+      if(inBest>=2)vulnTo.push(enemy.name);
+    });
+    return{mon:mon,score:totalScore,superHits:superHits,vulnTo:vulnTo,leadData:getLeadScore(mon),ability:mon.ability||null,abData:ab};
+  });
+
+  scored.sort(function(a,b){return b.score-a.score;});
+  var top3=scored.slice(0,3);
+  var maxScore=Math.max(top3[0].score,0.01);
+  var allHitTargets={};
+  scored.forEach(function(s){s.superHits.forEach(function(h){allHitTargets[h.enemy]=true;});});
+  var uncovered=enemies.filter(function(e){return !allHitTargets[e.name];});
+
+  var threatMap={};
+  enemies.forEach(function(enemy){
+    var counter=null;
+    for(var si=0;si<scored.length;si++){
+      for(var hi=0;hi<scored[si].superHits.length;hi++){
+        if(scored[si].superHits[hi].enemy===enemy.name){counter=scored[si].mon.name;break;}
+      }
+      if(counter)break;
+    }
+    top3.forEach(function(r){if(r.vulnTo.indexOf(enemy.name)>-1)threatMap[enemy.name]={counter:counter};});
+  });
+
+  // Determine lead pair from top3
+  var top3WithLead=top3.map(function(r){
+    var role=getLeadRole(r.leadData.score);
+    return{r:r,role:role};
+  });
+  // Sort: leads first, then flex, then back — pick best 2 as recommended lead pair
+  var leadPair=top3WithLead.slice().sort(function(a,b){
+    var order={"LEAD":0,"FLEX":1,"BACK":2};
+    return order[a.role.label]-order[b.role.label];
+  }).slice(0,2);
+
+  var rankLabels=["#1 BEST PICK","#2 STRONG PICK","#3 SOLID PICK"];
+  var rankClass=["r1","r2","r3"];
+  var html="";
+  // Excluded mons warning
+  if(excluded.length){
+    html+='<div style="background:rgba(255,64,96,.08);border:1.5px solid rgba(255,64,96,.3);border-radius:10px;padding:12px;margin-bottom:14px">';
+    html+='<div style="font-family:sans-serif;font-size:.7rem;letter-spacing:2px;color:var(--red);margin-bottom:6px;font-weight:700">⚠ EXCLUDED FROM ANALYSIS</div>';
+    excluded.forEach(function(e){
+      html+='<div style="font-size:.75rem;color:var(--dim2);margin-bottom:2px">'+e.name+' — missing '+e.missing+'</div>';
+    });
+    html+='</div>';
+  }
+  html+='<div class="sec-title">BRING <span>THESE 3</span></div>';
+  top3WithLead.forEach(function(item,i){
+    var r=item.r;
+    var role=item.role;
+    var types=r.mon.types.map(function(t){return '<span class="type-pip t-'+t+'">'+t+'</span>';}).join("");
+    var hitTags=r.superHits.map(function(h){return '<span class="tag-g">⚡ '+h.enemy+' via '+h.move+'</span>';}).join("");
+    var vulnTags=r.vulnTo.map(function(n){return '<span class="tag-w">⚠ '+n+'</span>';}).join("");
+    var pct=Math.round((r.score/maxScore)*100);
+    var hitCount=r.superHits.length;
+    var totalEnemies=enemies.length;
+    var hitFrac=hitCount+"/"+totalEnemies;
+    var absStrong=top3[0].score>=totalEnemies*1.5;
+    var confColor=(pct>=75&&absStrong)?"#c8ff00":pct>=40?"#f3d23b":"#ff4060";
+    var confLabel=(pct>=75&&absStrong)?"DOMINANT":pct>=40?"SOLID":"THIN";
+    var combinedLabel=confLabel+" ("+hitFrac+")";
+    var nameSize=i===0?"2.4rem":"1.9rem";
+    var leadReasons=r.leadData.reasons.length?r.leadData.reasons.join(", "):"";
+    var tempoNotes=getTempoAnnotation(r.mon,tempo);
+
+    // Override confidence label if conflict exists — prevent DOMINANT + tempo warning contradiction
+    var displayLabel=isHighRisk?"STRONG BUT POOR FIT":combinedLabel;
+    var criticalTempoWarnings=tempoNotes.filter(function(n){return n.color==="#ff4060";}).length;
+    var isConflict=(confLabel==="DOMINANT"||confLabel==="SOLID")&&criticalTempoWarnings>=1;
+    var isHighRisk=(confLabel==="DOMINANT")&&criticalTempoWarnings>=1;
+
+    // Card border: conflict overrides coverage color
+    var cardBorderColor=isHighRisk?"#ff4060":isConflict?"#f3d23b":confColor;
+    var cardBg=isHighRisk?"rgba(255,64,96,.06)":isConflict?"rgba(243,210,59,.04)":"";
+
+    html+='<div class="result-card '+rankClass[i]+'" style="border-color:'+cardBorderColor+';border-width:2px;'+(cardBg?"background:"+cardBg:"")+';">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">';
+    html+='<div class="r-rank">'+rankLabels[i]+'</div>';
+    html+='<div style="display:flex;align-items:center;gap:6px">';
+    html+='<span style="font-size:.75rem;font-weight:700;color:'+role.color+';background:rgba(0,0,0,.3);padding:1px 8px;border-radius:4px;border:1px solid '+role.color+'">'+role.icon+' '+role.label+'</span>';
+    html+='<span style="font-size:.75rem;font-weight:700;color:'+confColor+'">'+displayLabel+'</span>';
+    html+='</div></div>';
+
+    // CONFLICT BANNER — sits right under the rank row, impossible to miss
+    if(isHighRisk){
+      html+='<div style="background:rgba(255,64,96,.15);border:1px solid rgba(255,64,96,.4);border-radius:6px;padding:5px 10px;margin-bottom:8px;font-size:.75rem;font-weight:700;color:#ff4060">⚠ HIGH COVERAGE — POOR TEMPO FIT. Think twice before leading.</div>';
+    } else if(isConflict){
+      html+='<div style="background:rgba(243,210,59,.12);border:1px solid rgba(243,210,59,.35);border-radius:6px;padding:5px 10px;margin-bottom:8px;font-size:.75rem;font-weight:700;color:#f3d23b">⚡ STRONG PICK — but tempo conditions may complicate this.</div>';
+    }
+    html+='<div class="r-name" style="font-size:'+nameSize+'">'+r.mon.name+'</div>';
+    html+='<div class="mon-types" style="margin-bottom:6px">'+types+'</div>';
+    if(r.ability){
+      var abTag=r.abData&&r.abData.lead>=3?'color:#c8ff00':r.abData&&r.abData.bulk>=2?'color:#a78bfa':'color:var(--dim2)';
+      html+='<div style="font-size:.68rem;font-weight:600;'+abTag+';margin-bottom:4px">⬡ '+r.ability+'</div>';
+    }
+    if(r.mon.item&&MEGA_STONES[r.mon.item]){
+      html+='<div style="font-size:.68rem;font-weight:700;color:#c8ff00;margin-bottom:6px">◆ '+r.mon.item+' — '+MEGA_STONES[r.mon.item].ability+'</div>';
+    }
+    if(leadReasons){html+='<div style="font-size:.68rem;color:var(--dim2);margin-bottom:6px">'+role.icon+' '+leadReasons+'</div>';}
+    // Tempo annotations
+    if(tempoNotes.length){
+      tempoNotes.forEach(function(note){
+        html+='<div style="font-size:.7rem;font-weight:600;color:'+note.color+';margin-bottom:3px">'+note.icon+' '+note.text+'</div>';
+      });
+      html+='<div style="margin-bottom:4px"></div>';
+    }
+    html+='<div class="score-bar"><div class="score-fill" style="width:'+pct+'%"></div></div>';
+    html+='<div class="cov-row">';
+    if(r.superHits.length){html+='<div style="margin-bottom:5px"><strong style="color:var(--dim2);font-size:.7rem">SUPER EFFECTIVE VS</strong><br>'+hitTags+'</div>';}
+    else{html+='<div style="color:var(--dim);font-size:.75rem;margin-bottom:5px">No super effective coverage on this team</div>';}
+    if(r.vulnTo.length){html+='<div><strong style="color:var(--dim2);font-size:.7rem">WATCH OUT FOR</strong><br>'+vulnTags+'</div>';}
+    else{html+='<div style="color:var(--dim);font-size:.75rem">No type weaknesses to this team</div>';}
+    html+='</div></div>';
+  });
+
+  // LEAD PAIR RECOMMENDATION
+  html+='<div class="divider"></div>';
+  html+='<div class="sec-title">⚡ <span>RECOMMENDED LEAD PAIR</span></div>';
+  html+='<div style="background:var(--card);border:2px solid #c8ff00;border-radius:14px;padding:16px;margin-bottom:12px">';
+  html+='<div style="display:flex;gap:12px;align-items:center;justify-content:center;margin-bottom:10px">';
+  leadPair.forEach(function(item,i){
+    var role=item.role;
+    html+='<div style="text-align:center">';
+    html+='<div style="font-family:sans-serif;font-size:.65rem;letter-spacing:2px;color:var(--dim);margin-bottom:3px">SLOT '+(i+1)+'</div>';
+    html+='<div style="font-family:sans-serif;font-size:1.1rem;font-weight:700;color:var(--text)">'+item.r.mon.name+'</div>';
+    html+='<span style="font-size:.7rem;font-weight:700;color:'+role.color+'">'+role.icon+' '+role.label+'</span>';
+    html+='</div>';
+    if(i===0)html+='<div style="font-size:1.5rem;color:var(--dim)">+</div>';
+  });
+  html+='</div>';
+  // Back slot
+  var backMon=top3WithLead.find(function(item){return leadPair.indexOf(item)<0;});
+  if(backMon){
+    html+='<div style="border-top:1px solid var(--border);padding-top:10px;text-align:center">';
+    html+='<div style="font-size:.65rem;letter-spacing:2px;color:var(--dim);margin-bottom:3px">KEEP IN BACK</div>';
+    html+='<div style="font-size:1rem;font-weight:700;color:var(--text)">'+backMon.r.mon.name+'</div>';
+    html+='<span style="font-size:.7rem;font-weight:700;color:'+backMon.role.color+'">'+backMon.role.icon+' '+backMon.role.label+'</span>';
+    html+='</div>';
+  }
+  html+='</div>';
+
+  // TEMPO PROFILE CARD
+  html+='<div class="divider"></div>';
+  html+='<div class="sec-title">🧠 <span>TEMPO PROFILE</span></div>';
+  var tempoRows=[
+    {label:"Stall / Scout Risk",d:tempo.stall},
+    {label:"Fake Out Pressure",d:tempo.fakeout},
+    {label:"Speed Control Risk",d:tempo.speed},
+    {label:"Redirection Risk",d:tempo.redirect},
+    {label:"Setup Enablement",d:tempo.setup}
+  ];
+  html+='<div style="background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px">';
+  tempoRows.forEach(function(row){
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
+    html+='<div style="font-size:.75rem;color:var(--dim2)">'+row.label+'</div>';
+    html+='<span style="font-size:.72rem;font-weight:700;color:'+row.d.color+';background:rgba(0,0,0,.3);padding:1px 10px;border-radius:4px;border:1px solid '+row.d.color+'">'+row.d.label.toUpperCase()+'</span>';
+    html+='</div>';
+  });
+
+  // Overall tempo advisory
+  var advisory="";
+  if(tempo.overall===3){
+    advisory="High tempo disruption expected. Avoid all-in turn 1 lines. Prioritize resilient leads over glass cannons.";
+  } else if(tempo.overall===2){
+    advisory="Moderate tempo risk. Stay flexible. Have a pivot ready if turn 1 gets disrupted.";
+  } else {
+    advisory="Low tempo disruption. Straightforward damage lines should work. Execute your gameplan.";
+  }
+  var advisoryColor=tempo.overall===3?"#ff4060":tempo.overall===2?"#f3d23b":"#63bb5b";
+  html+='<div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px">';
+  html+='<div style="font-size:.68rem;letter-spacing:1.5px;color:var(--dim);margin-bottom:4px;font-family:sans-serif">ADVISORY</div>';
+  html+='<div style="font-size:.78rem;color:'+advisoryColor+';line-height:1.5;font-weight:500">'+advisory+'</div>';
+  html+='</div>';
+  html+='</div>';
+
+  var threatEntries=Object.keys(threatMap);
+  if(threatEntries.length||uncovered.length){
+    html+='<div class="divider"></div><div class="sec-title">⚠ <span>THREAT REPORT</span></div>';
+    if(threatEntries.length){
+      var rows=threatEntries.map(function(name){
+        var d=threatMap[name];
+        return '<span class="tag-w">⚠ '+name+'</span>'+(d.counter?(' <span class="tag-i">→ bring '+d.counter+'</span>'):'');
+      }).join("<br>");
+      html+='<div class="threat-box"><div class="threat-title">THREATENS YOUR TOP 3</div><div style="font-size:.78rem;color:var(--dim2);line-height:1.8">'+rows+'</div></div>';
+    }
+    if(uncovered.length){
+      var urows=uncovered.map(function(e){
+        var types=e.types.map(function(t){return '<span class="type-pip t-'+t+'" style="font-size:.58rem">'+t+'</span>';}).join("");
+        return '<span class="tag-w">⚠ '+e.name+'</span> '+types;
+      }).join("<br>");
+      html+='<div class="threat-box"><div class="threat-title">NO SUPER EFFECTIVE ANSWER FOR</div><div style="font-size:.78rem;color:var(--dim2);line-height:1.8">'+urows+'</div></div>';
+    }
+  }
+  document.getElementById("results-area").innerHTML=html;
+  document.getElementById("results-area").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+// BOOT
+initTeamCards();
+</script>
+</body>
+</html>
